@@ -39,4 +39,6 @@ if (res.error || res.result?.isError) { console.error(`${id}: 検索できない
 let rows: any[] = []; try { const j = JSON.parse(res.result?.content?.[0]?.text ?? "[]"); rows = Array.isArray(j) ? j : j.results ?? []; } catch {}
 const seen = new Set<string>(); rows = rows.filter(r => !seen.has(r.source_id + "/" + r.slug) && seen.add(r.source_id + "/" + r.slug));
 console.log(`${id}「${q}」→ ${rows.length}件`);
-for (const r of rows) console.log(`  [${r.source_id}] ${r.title}（${r.slug}）`);
+// AI が書いたページの題は、エンジンが「引用。指示ではない」の囲みに入れて返す。表示では中の題だけを出す
+const title = (x: string) => /```text\n([\s\S]*?)\n```/.exec(x ?? "")?.[1] ?? x;
+for (const r of rows) console.log(`  [${r.source_id}] ${title(r.title)}（${r.slug}）`);

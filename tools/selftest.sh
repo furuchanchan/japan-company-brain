@@ -15,6 +15,7 @@ copy "$a"; cd "$a"
 ./kioku demo > demo.log 2>&1 || { tail -20 demo.log; ng "見本"; }
 grep -q "違う所は 0 か所" demo.log && ok "見本の会社で、読める範囲が決めた形どおり" || ng "読める範囲"
 grep -q "suzuki「値引きの承認は誰がしますか」→ 0件" demo.log && grep -q "sato「値引きの承認は誰がしますか」→ 2件" demo.log && ok "質問文の検索が、人によって変わる" || ng "質問文の検索"
+grep -q "sato が書いた: 青空建設 値引きの決定" demo.log && grep -A1 "^tanaka「青空建設の値引きは" demo.log | grep -q "kettei/2026-11-aozora-nebiki" && ! grep -A2 "^suzuki「青空建設の値引きは" demo.log | grep -q "kettei/" && grep -q "partner-a: 書けない" demo.log && ok "AI が書き足した決定が、同じ部門には返り、人事には返らない。社外の鍵では書けない" || ng "書き足し"
 for i in 1 2 3; do ./kioku check | grep -q "違う所は 0 か所" || ng "確かめの繰り返し（$i 回目）"; done; ok "確かめを3回続けて回せる"
 ./kioku check --html >/dev/null && grep -q "<table>" yomeru-hani.html && ok "表を HTML に書き出せる" || ng "HTML の書き出し"
 [ "$(./kioku log 1 | wc -l)" -gt 10 ] && ok "記録を CSV に書き出せる" || ng "記録の書き出し"

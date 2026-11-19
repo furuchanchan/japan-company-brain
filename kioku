@@ -40,6 +40,8 @@ case "${1:-}" in
           E bun /opt/kioku/kit/kengen-4dan/check.ts $CJ --keys $KEYS --url http://127.0.0.1:3133 --write-test ;;
   search) [ $# -ge 3 ] || { echo "使い方: ./kioku search <メンバーの id> \"<質問>\""; exit 2; }
           shift; E bun /opt/kioku/tools/search.ts "$@" ;;
+  write)  [ $# -ge 5 ] || { echo "使い方: ./kioku write <メンバーの id> <slug> \"<題>\" \"<本文>\""; exit 2; }
+          shift; E bun /opt/kioku/tools/kaku.ts "$@" ;;
   connect) company; [ $# -ge 2 ] || { echo "使い方: ./kioku connect <メンバーの id>"; exit 2; }
           E bun /opt/kioku/tools/connect.ts $CJ "$2" --keys $KEYS --url "${KIOKU_PUBLIC_URL:-http://127.0.0.1:${KIOKU_PORT:-3133}}/mcp" ;;
   demo)
@@ -50,6 +52,10 @@ case "${1:-}" in
     "$0" apply --yes; "$0" sync; "$0" check
     echo; echo "== 同じ質問を、3人の鍵で"
     for m in shacho sato suzuki; do "$0" search $m "値引きの承認は誰がしますか"; done
+    echo; echo "== 営業の佐藤さんの AI が打ち合わせの決定を書き足し、ほかの人の AI が探す"
+    "$0" write sato kettei/2026-11-aozora-nebiki "青空建設 値引きの決定" "2026-11-19 の打ち合わせで決定。青空建設の11月の見積は値引き8パーセントとし、専務が承認した。"
+    for m in tanaka shacho suzuki; do "$0" search $m "青空建設の値引きは何パーセントに決まりましたか"; done
+    "$0" write partner-a kettei/shagai-test "社外から書く" "書けてはいけない" || true
     ;;
   log)
     # だれの鍵が・いつ・何をしたか（断られた呼び出しも）を CSV で出す。質問文や資料の中身は、エンジンが記録に残さない
