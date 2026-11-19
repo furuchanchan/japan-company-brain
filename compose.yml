@@ -20,7 +20,9 @@ services:
     build: { context: ., dockerfile: docker/engine.Dockerfile }
     depends_on:
       db: { condition: service_healthy }
+    user: "${BRAIN_UID:-0}:${BRAIN_GID:-0}"
     environment:
+      HOME: /data/home
       BRAIN_DB_PASSWORD: ${BRAIN_DB_PASSWORD:?}
       BRAIN_PUBLIC_URL: ${BRAIN_PUBLIC_URL:-}
     volumes:

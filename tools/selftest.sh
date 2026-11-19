@@ -3,6 +3,7 @@
 # 今ある環境には触れない（別の名前と別のポートで立て、終わりに消す）。使い方: sh tools/selftest.sh
 set -eu
 here="$(cd "$(dirname "$0")/.." && pwd)"
+export BRAIN_UID="$(id -u)" BRAIN_GID="$(id -g)"
 export COMPOSE_PROJECT_NAME=brainselftest BRAIN_PORT="${BRAIN_TEST_PORT:-3139}"
 w="$(mktemp -d)"; a="$w/a"; b="$w/b"; mkdir -p "$a" "$b"
 copy() { ( cd "$here" && git ls-files -co --exclude-standard | tar cf - -T - ) | tar xf - -C "$1"; }

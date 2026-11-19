@@ -3,6 +3,8 @@
 set -eu
 cd "$(dirname "$0")"
 DC="docker compose"
+# エンジンは、このコマンドを実行した人の権限で動かす（AI が書いた資料と鍵を、その人が読める・消せるように）
+export BRAIN_UID="${BRAIN_UID:-$(id -u)}" BRAIN_GID="${BRAIN_GID:-$(id -g)}"
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
 CJ=/srv/brain/config/company.json
 KEYS=/srv/brain/keys
@@ -66,7 +68,7 @@ case "${1:-}" in
     # DB・エンジンの設定・資料・鍵・会社の形・DB のパスワードを、1つのファイルにまとめる
     mkdir -p backup; f="backup/brain-$(date +%Y%m%d-%H%M%S).tar.gz"; w="$(mktemp -d)"
     $DC exec -T db pg_dump -U brain -d brain -Fc > "$w/db.dump"
-    E tar czf - -C /data --exclude=./home/.gbrain/run . > "$w/home.tar.gz"
+    E sh -c 'cd /data && find home content -mindepth 1 -maxdepth 1 -print0 | tar czf - --null --exclude=home/.gbrain/run -T -' > "$w/home.tar.gz"
     cp .env "$w/env"; [ -f config/company.json ] && cp config/company.json "$w/company.json"
     ( umask 077; tar czf "$f" -C "$w" . -C "$PWD" docs keys )
     rm -rf "$w"
@@ -82,7 +84,7 @@ case "${1:-}" in
     $DC up -d --build db
     i=0; until $DC exec -T db pg_isready -U brain -d brain >/dev/null 2>&1; do i=$((i+1)); [ $i -gt 60 ] && { echo "DB が立ち上がりません。"; exit 1; }; sleep 2; done
     $DC exec -T db pg_restore -U brain -d brain --clean --if-exists --no-owner < "$w/db.dump"
-    $DC run --rm --no-deps -T --entrypoint sh engine -c 'mkdir -p /data && tar xzf - -C /data' < "$w/home.tar.gz"
+    $DC run --rm --no-deps -T --entrypoint sh engine -c 'mkdir -p /data && tar xzf - --no-overwrite-dir -C /data' < "$w/home.tar.gz"
     rm -rf "$w"
     $DC up -d --build
     echo "立ち上がるのを待っています"; wait_ready

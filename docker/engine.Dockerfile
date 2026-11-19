@@ -10,6 +10,8 @@ WORKDIR /opt/gbrain
 ENV GBRAIN_NO_AUTOPILOT_INSTALL=1 GBRAIN_HOME=/data/home
 RUN bun install --frozen-lockfile
 RUN printf '#!/bin/sh\nexec bun run /opt/gbrain/src/cli.ts "$@"\n' > /usr/local/bin/gbrain && chmod +x /usr/local/bin/gbrain
+# root でない人の権限でも書けるように、データの置き場を先に作っておく
+RUN mkdir -p /data/home /data/content && chmod -R 1777 /data
 COPY kit /opt/brain/kit
 COPY tools /opt/brain/tools
 COPY docker/start.sh /opt/brain/start.sh
