@@ -1,0 +1,66 @@
+{
+  "owner": "shacho",
+  "kakikomi": "sonomama",
+  "zensha": {
+    "id": "zensha",
+    "name": "全社",
+    "path": "/srv/kioku/docs/zensha",
+    "yakuin_folders": [
+      "keiei/"
+    ],
+    "shagai_folders": [
+      "shagai/"
+    ],
+    "plain_directory": true
+  },
+  "departments": [
+    {
+      "id": "eigyo",
+      "name": "営業",
+      "path": "/srv/kioku/docs/eigyo",
+      "plain_directory": true
+    },
+    {
+      "id": "jinji",
+      "name": "人事",
+      "path": "/srv/kioku/docs/jinji",
+      "plain_directory": true
+    }
+  ],
+  "members": [
+    {
+      "id": "shacho",
+      "name": "社長",
+      "dan": "yakuin"
+    },
+    {
+      "id": "senmu",
+      "name": "専務",
+      "dan": "yakuin"
+    },
+    {
+      "id": "sato",
+      "name": "営業 佐藤",
+      "dan": "bumon",
+      "department": "eigyo"
+    },
+    {
+      "id": "tanaka",
+      "name": "営業 田中",
+      "dan": "bumon",
+      "department": "eigyo"
+    },
+    {
+      "id": "suzuki",
+      "name": "人事 鈴木",
+      "dan": "bumon",
+      "department": "jinji"
+    },
+    {
+      "id": "partner-a",
+      "name": "協力会社A",
+      "dan": "shagai"
+    }
+  ],
+  "rules": []
+}

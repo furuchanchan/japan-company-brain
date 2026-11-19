@@ -1,0 +1,5 @@
+.env
+/keys/
+/docs/
+/config/company.json
+.sync.log

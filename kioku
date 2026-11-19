@@ -1,0 +1,65 @@
+#!/bin/sh
+# 操作の入口。使い方は ./kioku（引数なし）で出る。
+set -eu
+cd "$(dirname "$0")"
+DC="docker compose"
+if [ -f .env ]; then set -a; . ./.env; set +a; fi
+CJ=/srv/kioku/config/company.json
+KEYS=/srv/kioku/keys
+E() { $DC exec -T engine "$@"; }
+company() { [ -f config/company.json ] || { echo "config/company.json がありません。config/company.example.json を写して会社の形を書くか、./kioku demo で見本の会社を入れてください。"; exit 2; }; }
+wait_ready() {
+  i=0
+  until E bun -e "const r=await fetch('http://127.0.0.1:3133/health').catch(()=>null);process.exit(r&&r.ok?0:1)" >/dev/null 2>&1; do
+    i=$((i+1)); [ $i -gt 120 ] && { echo "窓口が立ち上がりません。./kioku logs で原因を見てください。"; exit 1; }
+    sleep 3
+  done
+}
+case "${1:-}" in
+  up)
+    if [ ! -f .env ]; then
+      ( umask 077; printf 'KIOKU_DB_PASSWORD=%s\n' "$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')" > .env )
+      echo ".env を作りました（DB のパスワード。外に出さないでください）"
+    fi
+    mkdir -p docs keys config
+    $DC up -d --build
+    echo "立ち上がるのを待っています（初回は数分かかります）"
+    wait_ready
+    $DC exec -T -e DATABASE_URL="postgresql:///kioku?user=kioku" db sh /kit/ja-index.sh --yes
+    echo "立ち上がりました。AI のつなぎ先: http://127.0.0.1:${KIOKU_PORT:-3133}/mcp"
+    ;;
+  apply)  company; shift; E bun /opt/kioku/kit/kengen-4dan/apply.ts $CJ --keys $KEYS "$@" ;;
+  sync)   E gbrain sync --all --no-embed > .sync.log 2>&1 || { cat .sync.log; exit 1; }
+          grep -E "^--- Syncing|pages imported|added, ~|held|error" .sync.log || true; rm -f .sync.log ;;
+  check)  company; E bun /opt/kioku/kit/kengen-4dan/check.ts $CJ --keys $KEYS --url http://127.0.0.1:3133 --write-test ;;
+  search) [ $# -ge 3 ] || { echo "使い方: ./kioku search <メンバーの id> \"<質問>\""; exit 2; }
+          shift; E bun /opt/kioku/tools/search.ts "$@" ;;
+  connect) company; [ $# -ge 2 ] || { echo "使い方: ./kioku connect <メンバーの id>"; exit 2; }
+          E bun /opt/kioku/tools/connect.ts $CJ "$2" --keys $KEYS --url "${KIOKU_PUBLIC_URL:-http://127.0.0.1:${KIOKU_PORT:-3133}}/mcp" ;;
+  demo)
+    if [ -f config/company.json ] && ! cmp -s config/company.json sample/company.json; then
+      echo "config/company.json が既にあります。見本は、まっさらな所でだけ入れられます。"; exit 2
+    fi
+    mkdir -p docs config; cp -R sample/docs/. docs/; cp sample/company.json config/company.json
+    "$0" apply --yes; "$0" sync; "$0" check
+    echo; echo "== 同じ質問を、3人の鍵で"
+    for m in shacho sato suzuki; do "$0" search $m "値引きの承認は誰がしますか"; done
+    ;;
+  gbrain) shift; E gbrain "$@" ;;
+  status) $DC ps; E gbrain --version 2>&1 | grep -v '^\[gbrain notice' ;;
+  logs)   shift; $DC logs --tail "${1:-100}" engine ;;
+  down)   $DC down ;;
+  *) cat <<'U'
+使い方:
+  ./kioku up              立てる（初回は DB とエンジンを組み立て、日本語の索引を足す）
+  ./kioku demo            見本の会社（6人・文書9件）を入れて、権限と日本語検索を確かめる
+  ./kioku apply           会社の形（config/company.json）を入れる下見。--yes を付けると入れる
+  ./kioku sync            docs/ の文書を取り込む
+  ./kioku check           1人ずつの鍵で実際に呼び、読める・読めないが決めた形どおりかを表にする
+  ./kioku search <id> "<質問>"   その人の鍵で検索する
+  ./kioku connect <id>    その人の AI（Claude Code など）をつなぐ鍵を作る
+  ./kioku gbrain <...>    エンジンのコマンドをそのまま呼ぶ（例: ./kioku gbrain access member disable sato）
+  ./kioku status | logs | down
+U
+    ;;
+esac
