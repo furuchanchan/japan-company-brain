@@ -1,10 +1,11 @@
 #!/usr/bin/env bun
 // 日本語の質問文を、語に分けてから gbrain の検索に渡す中継。
 // gbrain の窓口（gbrain serve --http）の手前に置き、AI のつなぎ先をこの中継の URL にする。本家のコードは変えない。
-// 直すのは、検索の道具（既定は search）に来た、文として書かれた日本語の問いだけ。ほかの呼び出しは、そのまま通す。
+// 直すのは、検索の道具（既定は search）に来た問いだけ。表記ゆれをそろえ、文として書かれた日本語は語に分ける。ほかの呼び出しは、そのまま通す。
 //
 // 使い方: bun chukei.ts --upstream http://127.0.0.1:3131 --listen 3133 [--host 127.0.0.1] [--tools search]
 import { bunDesuKa, wakeru } from "./wakeru.ts";
+import { soroeru } from "./yure.ts";
 
 const arg = (k: string, d: string) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : d; };
 const upstream = arg("--upstream", "http://127.0.0.1:3131").replace(/\/$/, "");
@@ -14,9 +15,10 @@ let naoshita = 0;
 function naosu(msg: any): boolean {
   if (msg?.method !== "tools/call" || !tools.has(msg.params?.name)) return false;
   const q = msg.params?.arguments?.query;
-  if (typeof q !== "string" || !bunDesuKa(q)) return false;
-  const w = wakeru(q);
-  if (!w) return false; // 残る語が無い時は、そのまま通す
+  if (typeof q !== "string") return false;
+  // 文なら先に語に分け（残る語が無い時はそのまま）、その後で表記ゆれを索引と同じ形にそろえる
+  const w = [...new Set(soroeru((bunDesuKa(q) && wakeru(q)) || q).split(" "))].join(" ");
+  if (w === q) return false;
   msg.params.arguments.query = w;
   return true;
 }
@@ -47,9 +49,9 @@ const server = Bun.serve({
     catch (e) { return new Response(`中継の先（${upstream}）につながらない: ${String(e).slice(0, 120)}`, { status: 502 }); }
     const h = new Headers(r.headers);
     h.delete("content-length"); h.delete("content-encoding");
-    if (did) h.set("x-nihongo-kensaku", "waketa"); // 語に分けて渡した印（問いの中身は記録しない）
+    if (did) h.set("x-nihongo-kensaku", "waketa"); // 問いを直して渡した印（問いの中身は記録しない）
     return new Response(r.body, { status: r.status, headers: h });
   },
 });
 console.log(`日本語検索の中継: http://${server.hostname}:${server.port} → ${upstream}（直す道具: ${[...tools].join("・")}）`);
-setInterval(() => { if (naoshita) { console.log(`語に分けて渡した問い: ${naoshita} 件`); naoshita = 0; } }, 3600_000);
+setInterval(() => { if (naoshita) { console.log(`直して渡した問い: ${naoshita} 件`); naoshita = 0; } }, 3600_000);

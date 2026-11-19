@@ -28,6 +28,8 @@ case "${1:-}" in
     echo "立ち上がるのを待っています（初回は数分かかります）"
     wait_ready
     $DC exec -T -e DATABASE_URL="postgresql:///brain?user=brain" db sh /kit/ja-index.sh --yes
+    # 表記ゆれの索引（全角と半角・異体字・(株)・送り仮名・和暦）。資料の本文は変えない
+    E bun /opt/brain/kit/nihongo-kensaku/yure.ts --sql | $DC exec -T db psql -U brain -d brain -v ON_ERROR_STOP=1 -q 2>/dev/null
     echo "立ち上がりました。AI のつなぎ先: ${BRAIN_PUBLIC_URL:-http://127.0.0.1:${BRAIN_PORT:-3133}}/mcp"
     ;;
   apply)  company; shift; E bun /opt/brain/kit/kengen-4dan/apply.ts $CJ --keys $KEYS "$@" ;;
@@ -58,6 +60,8 @@ case "${1:-}" in
     "$0" write sato kettei/2026-11-aozora-nebiki "青空建設 値引きの決定" "2026-11-19 の打ち合わせで決定。青空建設の11月の見積は値引き8パーセントとし、専務が承認した。"
     for m in tanaka shacho suzuki; do "$0" search $m "青空建設の値引きは何パーセントに決まりましたか"; done
     "$0" write partner-a kettei/shagai-test "社外から書く" "書けてはいけない" || true
+    echo; echo "== 書き方がちがっても探せる（資料は「ＡＩ」「令和8年」「㈱山並商事」「髙橋」と書いてある）"
+    for q in "AI" "2026年4月" "株式会社山並商事" "高橋"; do "$0" search shacho "$q"; done
     ;;
   log)
     # だれの鍵が・いつ・何をしたか（断られた呼び出しも）を CSV で出す。質問文や資料の中身は、エンジンが記録に残さない
@@ -100,7 +104,7 @@ case "${1:-}" in
   *) cat <<'U'
 使い方:
   ./brain up              立てる（初回は DB とエンジンを組み立て、日本語の索引を足す）
-  ./brain demo            見本の会社（6人・文書9件）を入れて、権限と日本語検索を確かめる
+  ./brain demo            見本の会社（6人・文書10件）を入れて、権限と日本語検索を確かめる
   ./brain apply           会社の形（config/company.json）を入れる下見。--yes を付けると入れる
   ./brain sync            docs/ の文書を取り込む
   ./brain check           1人ずつの鍵で実際に呼び、読める・読めないが決めた形どおりかを表にする
