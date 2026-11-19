@@ -26,7 +26,7 @@ case "${1:-}" in
     echo "立ち上がるのを待っています（初回は数分かかります）"
     wait_ready
     $DC exec -T -e DATABASE_URL="postgresql:///kioku?user=kioku" db sh /kit/ja-index.sh --yes
-    echo "立ち上がりました。AI のつなぎ先: http://127.0.0.1:${KIOKU_PORT:-3133}/mcp"
+    echo "立ち上がりました。AI のつなぎ先: ${KIOKU_PUBLIC_URL:-http://127.0.0.1:${KIOKU_PORT:-3133}}/mcp"
     ;;
   apply)  company; shift; E bun /opt/kioku/kit/kengen-4dan/apply.ts $CJ --keys $KEYS "$@" ;;
   sync)   E gbrain sync --all --no-embed > .sync.log 2>&1 || { cat .sync.log; exit 1; }
@@ -51,6 +51,40 @@ case "${1:-}" in
     echo; echo "== 同じ質問を、3人の鍵で"
     for m in shacho sato suzuki; do "$0" search $m "値引きの承認は誰がしますか"; done
     ;;
+  log)
+    # だれの鍵が・いつ・何をしたか（断られた呼び出しも）を CSV で出す。質問文や資料の中身は、エンジンが記録に残さない
+    days="${2:-30}"; case "$days" in ''|*[!0-9]*) echo "使い方: ./kioku log [さかのぼる日数。既定は30]"; exit 2 ;; esac
+    $DC exec -T db psql -U kioku -d kioku -v ON_ERROR_STOP=1 -c "\\copy (select to_char(created_at at time zone 'Asia/Tokyo','YYYY-MM-DD HH24:MI:SS') as \"日時\", coalesce(agent_name,'') as \"だれ\", operation as \"したこと\", status as \"結果\", coalesce(error_message,'') as \"断った理由\", latency_ms as \"ミリ秒\" from mcp_request_log where created_at > now() - interval '$days days' order by id) to stdout with csv header"
+    ;;
+  backup)
+    # DB・エンジンの設定・資料・鍵・会社の形・DB のパスワードを、1つのファイルにまとめる
+    mkdir -p backup; f="backup/kioku-$(date +%Y%m%d-%H%M%S).tar.gz"; w="$(mktemp -d)"
+    $DC exec -T db pg_dump -U kioku -d kioku -Fc > "$w/db.dump"
+    E tar czf - -C /data --exclude=./home/.gbrain/run . > "$w/home.tar.gz"
+    cp .env "$w/env"; [ -f config/company.json ] && cp config/company.json "$w/company.json"
+    ( umask 077; tar czf "$f" -C "$w" . -C "$PWD" docs keys )
+    rm -rf "$w"
+    echo "$f に書き出しました（$(du -h "$f" | cut -f1)）。鍵と DB のパスワードが入っています。置き場所に気をつけてください。"
+    ;;
+  restore)
+    [ $# -ge 2 ] && [ -f "$2" ] || { echo "使い方: ./kioku restore <backup のファイル>   ※まっさらな所（./kioku up の前）で実行します"; exit 2; }
+    if [ -f .env ] || [ -n "$($DC ps -aq 2>/dev/null)" ]; then echo "ここには既に環境があります。復元は、まっさらな所でだけできます（今の環境を消すなら ./kioku down の後、docker compose down -v と .env の削除）。"; exit 2; fi
+    w="$(mktemp -d)"; tar xzf "$2" -C "$w"
+    ( umask 077; cp "$w/env" .env ); set -a; . ./.env; set +a
+    mkdir -p docs keys config; cp -R "$w/docs/." docs/; cp -R "$w/keys/." keys/
+    [ -f "$w/company.json" ] && cp "$w/company.json" config/company.json
+    $DC up -d --build db
+    i=0; until $DC exec -T db pg_isready -U kioku -d kioku >/dev/null 2>&1; do i=$((i+1)); [ $i -gt 60 ] && { echo "DB が立ち上がりません。"; exit 1; }; sleep 2; done
+    $DC exec -T db pg_restore -U kioku -d kioku --clean --if-exists --no-owner < "$w/db.dump"
+    $DC run --rm --no-deps -T --entrypoint sh engine -c 'mkdir -p /data && tar xzf - -C /data' < "$w/home.tar.gz"
+    rm -rf "$w"
+    $DC up -d --build
+    echo "立ち上がるのを待っています"; wait_ready
+    # 資料のフォルダは置き直されているので、AI からの書き込みが通るように印を付け直す
+    [ -f config/company.json ] && E bun /opt/kioku/tools/restamp.ts $CJ --yes
+    echo "復元しました。./kioku check で、読める範囲が元のとおりかを確かめてください。"
+    ;;
+  restamp) company; shift; E bun /opt/kioku/tools/restamp.ts $CJ "$@" ;;
   gbrain) shift; E gbrain "$@" ;;
   status) $DC ps; E gbrain --version 2>&1 | grep -v '^\[gbrain notice' ;;
   logs)   shift; $DC logs --tail "${1:-100}" engine ;;
@@ -65,6 +99,10 @@ case "${1:-}" in
   ./kioku check --html    同じ表を、理由つきの1枚の HTML（yomeru-hani.html）に書き出す
   ./kioku search <id> "<質問>"   その人の鍵で検索する
   ./kioku connect <id>    その人の AI（Claude Code など）をつなぐ鍵を作る
+  ./kioku log [日数]      だれの鍵が・いつ・何をしたかを CSV で出す（既定は30日ぶん）
+  ./kioku backup          DB・設定・資料・鍵を、backup/ の下の1つのファイルにまとめる
+  ./kioku restore <file>  まっさらな所に、backup のファイルから戻す
+  ./kioku restamp         docs/ のフォルダを置き直した後、AI からの書き込みが断られる時の手当て（下見。--yes で実行）
   ./kioku gbrain <...>    エンジンのコマンドをそのまま呼ぶ（例: ./kioku gbrain access member disable sato）
   ./kioku status | logs | down
 U
