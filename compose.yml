@@ -1,17 +1,17 @@
 # 1台のホストに、DB とエンジンを立てる。外へ開く口は 127.0.0.1:3133 の1つだけ。
-name: kioku
+name: japan-company-brain
 services:
   db:
     build: { context: ., dockerfile: docker/db.Dockerfile }
     environment:
-      POSTGRES_USER: kioku
-      POSTGRES_PASSWORD: ${KIOKU_DB_PASSWORD:?先に ./kioku up を実行してください（.env を作ります）}
-      POSTGRES_DB: kioku
+      POSTGRES_USER: brain
+      POSTGRES_PASSWORD: ${BRAIN_DB_PASSWORD:?先に ./brain up を実行してください（.env を作ります）}
+      POSTGRES_DB: brain
     volumes:
       - db:/var/lib/postgresql/data
       - ./kit/nihongo-kensaku:/kit:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kioku -d kioku"]
+      test: ["CMD-SHELL", "pg_isready -U brain -d brain"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -21,15 +21,15 @@ services:
     depends_on:
       db: { condition: service_healthy }
     environment:
-      KIOKU_DB_PASSWORD: ${KIOKU_DB_PASSWORD:?}
-      KIOKU_PUBLIC_URL: ${KIOKU_PUBLIC_URL:-}
+      BRAIN_DB_PASSWORD: ${BRAIN_DB_PASSWORD:?}
+      BRAIN_PUBLIC_URL: ${BRAIN_PUBLIC_URL:-}
     volumes:
       - home:/data
-      - ./docs:/srv/kioku/docs
-      - ./config:/srv/kioku/config:ro
-      - ./keys:/srv/kioku/keys
+      - ./docs:/srv/brain/docs
+      - ./config:/srv/brain/config:ro
+      - ./keys:/srv/brain/keys
     ports:
-      - "127.0.0.1:${KIOKU_PORT:-3133}:3133"
+      - "127.0.0.1:${BRAIN_PORT:-3133}:3133"
     healthcheck:
       test: ["CMD", "bun", "-e", "const r=await fetch('http://127.0.0.1:3133/health').catch(()=>null);process.exit(r&&r.ok?0:1)"]
       interval: 5s

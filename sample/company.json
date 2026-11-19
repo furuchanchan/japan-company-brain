@@ -4,7 +4,7 @@
   "zensha": {
     "id": "zensha",
     "name": "全社",
-    "path": "/srv/kioku/docs/zensha",
+    "path": "/srv/brain/docs/zensha",
     "yakuin_folders": [
       "keiei/"
     ],
@@ -17,13 +17,13 @@
     {
       "id": "eigyo",
       "name": "営業",
-      "path": "/srv/kioku/docs/eigyo",
+      "path": "/srv/brain/docs/eigyo",
       "plain_directory": true
     },
     {
       "id": "jinji",
       "name": "人事",
-      "path": "/srv/kioku/docs/jinji",
+      "path": "/srv/brain/docs/jinji",
       "plain_directory": true
     }
   ],

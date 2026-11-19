@@ -5,7 +5,7 @@ import { readFileSync } from "fs";
 const a = process.argv.slice(2);
 const opt = (k: string, d: string) => (a.includes(k) ? a[a.indexOf(k) + 1] : d);
 const [id, slug, title, text] = a.filter((x, i) => !x.startsWith("--") && !["--url", "--keys"].includes(a[i - 1]));
-const base = opt("--url", "http://127.0.0.1:3133"), keys = opt("--keys", "/srv/kioku/keys");
+const base = opt("--url", "http://127.0.0.1:3133"), keys = opt("--keys", "/srv/brain/keys");
 if (!id || !slug || !title || !text) { console.error('使い方: bun kaku.ts <メンバーの id> <slug> "<題>" "<本文>"'); process.exit(2); }
 const txt = readFileSync(`${keys}/${id}.txt`, "utf8");
 const cid = /Client ID:\s+(\S+)/.exec(txt)![1], sec = /Client Secret:\s+(\S+)/.exec(txt)![1];
@@ -22,7 +22,7 @@ async function rpc(method: string, params: any, notify = false): Promise<any> {
   const line = s.startsWith("{") ? s : (s.split("\n").filter(l => l.startsWith("data:")).pop() || "").slice(5);
   try { return JSON.parse(line); } catch { return { error: { message: s.slice(0, 200) } }; }
 }
-await rpc("initialize", { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "kioku-kaku", version: "1" } });
+await rpc("initialize", { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "brain-kaku", version: "1" } });
 await rpc("notifications/initialized", {}, true);
 const res = await rpc("tools/call", { name: "put_page", arguments: { slug, content: `---\ntitle: ${title}\ntype: note\n---\n# ${title}\n\n${text}\n` } });
 if (JSON.stringify(res).includes("insufficient_scope")) { console.log(`${id}: 書けない（この鍵は読むだけ）`); process.exit(1); }

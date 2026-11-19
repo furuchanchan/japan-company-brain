@@ -1,4 +1,4 @@
-# kioku（仮称）
+# Japan Company Brain
 
 会社の Company Brain を自分のサーバーに立てる一式です。
 
@@ -19,12 +19,12 @@ Claude Code などの AI が、仕事の中で決まったことを書き足し�
 
 ```bash
 git clone <このリポジトリ>
-cd kioku
-./kioku up      # 立てる。初回は組み立てに数分かかります
-./kioku demo    # 見本の会社（6人・文書9件）を入れて確かめる
+cd japan-company-brain
+./brain up      # 立てる。初回は組み立てに数分かかります
+./brain demo    # 見本の会社（6人・文書9件）を入れて確かめる
 ```
 
-`./kioku demo` の終わりに、次の2つが出ます。
+`./brain demo` の終わりに、次の2つが出ます。
 
 1つ目は権限の表です。43か所を実際に呼び、決めた形と違う所を数えます。
 
@@ -70,7 +70,7 @@ partner-a: 書けない（この鍵は読むだけ）
 同じ表を、理由つきの1枚の HTML にも書き出せます。行を押すと、そうなる理由と、それを決めている設定が開きます。
 
 ```bash
-./kioku check --html    # yomeru-hani.html に書き出す
+./brain check --html    # yomeru-hani.html に書き出す
 ```
 
 ![読める範囲の表。資料ごとに、役員・営業・人事・社外のだれが読めるかを●で示す](assets/yomeru-hani.png)
@@ -82,7 +82,7 @@ partner-a: 書けない（この鍵は読むだけ）
 1. 立てる
 
    ```bash
-   ./kioku up
+   ./brain up
    ```
 
 2. 会社の形を書く。`config/company.example.json` を `config/company.json` に写し、部門とメンバーを書き換えます。項目の説明は [権限のひな形](kit/kengen-4dan/README.md) にあります
@@ -98,24 +98,24 @@ partner-a: 書けない（この鍵は読むだけ）
 4. 入れて、確かめる
 
    ```bash
-   ./kioku apply          # 下見。何も変えません
-   ./kioku apply --yes    # 入れる
-   ./kioku sync           # 資料を取り込む
-   ./kioku check          # 権限の表を出す
-   ./kioku check --html   # 同じ表を HTML に書き出す（情報システムや上長に見せる時に）
+   ./brain apply          # 下見。何も変えません
+   ./brain apply --yes    # 入れる
+   ./brain sync           # 資料を取り込む
+   ./brain check          # 権限の表を出す
+   ./brain check --html   # 同じ表を HTML に書き出す（情報システムや上長に見せる時に）
    ```
 
 5. 1人ずつ、AI をつなぐ鍵を作る
 
    ```bash
-   ./kioku connect sato
+   ./brain connect sato
    ```
 
    鍵は `keys/sato.token.txt` に置かれ、つなぐコマンドが表示されます。鍵は本人だけに渡してください。
 
-資料を足した時は、`./kioku sync` をもう1度実行します。
-人を足した時は、`config/company.json` に足してから `./kioku apply --yes` をもう1度実行します。
-退職や異動の時は `./kioku gbrain access member disable <id>` を実行すると、その人の鍵が次の呼び出しから使えなくなります。
+資料を足した時は、`./brain sync` をもう1度実行します。
+人を足した時は、`config/company.json` に足してから `./brain apply --yes` をもう1度実行します。
+退職や異動の時は `./brain gbrain access member disable <id>` を実行すると、その人の鍵が次の呼び出しから使えなくなります。
 
 ## しくみ
 
@@ -127,7 +127,7 @@ partner-a: 書けない（この鍵は読むだけ）
 
 - エンジンには [gbrain](https://github.com/garrytan/gbrain)（MIT License）を使っています。コードは変えず、確かめたバージョン（v0.60.736.0）を指定して取り込みます
 - この一式が足すのは、権限のひな形・日本語検索の中継と索引・立てる手順・確かめの道具です
-- エンジンのコマンドは `./kioku gbrain <...>` でそのまま呼べます
+- エンジンのコマンドは `./brain gbrain <...>` でそのまま呼べます
 
 細かい説明は [権限のひな形](kit/kengen-4dan/README.md) と [日本語検索の直し](kit/nihongo-kensaku/README.md) にあります。
 
@@ -136,8 +136,8 @@ partner-a: 書けない（この鍵は読むだけ）
 ### バックアップと復元
 
 ```bash
-./kioku backup                      # backup/kioku-日付-時刻.tar.gz に書き出す
-./kioku restore backup/kioku-….tar.gz   # まっさらな所（./kioku up の前）に戻す
+./brain backup                      # backup/brain-日付-時刻.tar.gz に書き出す
+./brain restore backup/brain-….tar.gz   # まっさらな所（./brain up の前）に戻す
 ```
 
 バックアップには、DB・エンジンの設定・`docs/`・`keys/`・会社の形・DB のパスワードが入ります。鍵とパスワードが入っているので、置き場所に気をつけてください。
@@ -146,7 +146,7 @@ partner-a: 書けない（この鍵は読むだけ）
 ### だれが何をしたかの記録
 
 ```bash
-./kioku log 30 > kiroku.csv    # 30日ぶん
+./brain log 30 > kiroku.csv    # 30日ぶん
 ```
 
 ```
@@ -163,11 +163,11 @@ partner-a: 書けない（この鍵は読むだけ）
 リポジトリのフォルダを別の場所へ移したり、`docs/` を作り直したりすると、AI からの書き込みが `recovery_required` で断られます。エンジンが、資料のフォルダが入れ替わっていないかを見ているためです。中身が同じことをエンジンに確かめさせて、印を付け直します。
 
 ```bash
-./kioku restamp          # 下見。置き直されたフォルダを数えます
-./kioku restamp --yes    # 印を付け直す
+./brain restamp          # 下見。置き直されたフォルダを数えます
+./brain restamp --yes    # 印を付け直す
 ```
 
-`./kioku restore` は、この手当てまで自動でします。
+`./brain restore` は、この手当てまで自動でします。
 
 ### サーバーに置く
 
@@ -177,9 +177,9 @@ partner-a: 書けない（この鍵は読むだけ）
 
 手元の Docker と見本の会社で、次の8つを確かめました（2026-11-19）。`sh tools/selftest.sh` で、同じ確かめをまっさらな写しで回せます（8つ目だけは手で確かめました）。
 
-1. まっさらな所から `./kioku up` と `./kioku demo` が通り、権限の43か所が決めた形どおり
+1. まっさらな所から `./brain up` と `./brain demo` が通り、権限の43か所が決めた形どおり
 2. 同じ質問文の検索が人によって変わる（営業の2人には2件、人事には0件）。営業の人の鍵で書き足したページは、営業と役員には返り、人事には返らない。社外の鍵では書けない
-3. `./kioku check` を続けて回しても通る
+3. `./brain check` を続けて回しても通る
 4. 表を HTML に、記録を CSV に書き出せる
 5. バックアップから、まっさらな所に復元できる。復元の後も43か所が同じで、AI からも書き込める
 6. 復元の後も、渡してあった AI の鍵が使える
@@ -195,7 +195,7 @@ partner-a: 書けない（この鍵は読むだけ）
 ## 注意
 
 - `.env`（DB のパスワード）と `keys/`（1人ずつの鍵）は秘密です。リポジトリに入れないでください（`.gitignore` に入れてあります）
-- エンジンのバージョンを上げる時は、`docker/engine.Dockerfile` のバージョンとコミットを替えます。まっさらな所で `./kioku demo` が通ることを確かめてから、使っている環境に入れてください
+- エンジンのバージョンを上げる時は、`docker/engine.Dockerfile` のバージョンとコミットを替えます。まっさらな所で `./brain demo` が通ることを確かめてから、使っている環境に入れてください
 
 ## ライセンス
 

@@ -1,0 +1,116 @@
+#!/bin/sh
+# 操作の入口。使い方は ./brain（引数なし）で出る。
+set -eu
+cd "$(dirname "$0")"
+DC="docker compose"
+if [ -f .env ]; then set -a; . ./.env; set +a; fi
+CJ=/srv/brain/config/company.json
+KEYS=/srv/brain/keys
+E() { $DC exec -T engine "$@"; }
+company() { [ -f config/company.json ] || { echo "config/company.json がありません。config/company.example.json を写して会社の形を書くか、./brain demo で見本の会社を入れてください。"; exit 2; }; }
+wait_ready() {
+  i=0
+  until E bun -e "const r=await fetch('http://127.0.0.1:3133/health').catch(()=>null);process.exit(r&&r.ok?0:1)" >/dev/null 2>&1; do
+    i=$((i+1)); [ $i -gt 120 ] && { echo "窓口が立ち上がりません。./brain logs で原因を見てください。"; exit 1; }
+    sleep 3
+  done
+}
+case "${1:-}" in
+  up)
+    if [ ! -f .env ]; then
+      ( umask 077; printf 'BRAIN_DB_PASSWORD=%s\n' "$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')" > .env )
+      echo ".env を作りました（DB のパスワード。外に出さないでください）"
+    fi
+    mkdir -p docs keys config
+    $DC up -d --build
+    echo "立ち上がるのを待っています（初回は数分かかります）"
+    wait_ready
+    $DC exec -T -e DATABASE_URL="postgresql:///brain?user=brain" db sh /kit/ja-index.sh --yes
+    echo "立ち上がりました。AI のつなぎ先: ${BRAIN_PUBLIC_URL:-http://127.0.0.1:${BRAIN_PORT:-3133}}/mcp"
+    ;;
+  apply)  company; shift; E bun /opt/brain/kit/kengen-4dan/apply.ts $CJ --keys $KEYS "$@" ;;
+  sync)   E gbrain sync --all --no-embed > .sync.log 2>&1 || { cat .sync.log; exit 1; }
+          grep -E "^--- Syncing|pages imported|added, ~|held|error" .sync.log || true; rm -f .sync.log ;;
+  check)  company
+          if [ "${2:-}" = "--html" ]; then
+            rc=0; E bun /opt/brain/kit/kengen-4dan/check.ts $CJ --keys $KEYS --url http://127.0.0.1:3133 --write-test --html /tmp/yomeru-hani.html || rc=$?
+            E cat /tmp/yomeru-hani.html > yomeru-hani.html
+            echo "表を yomeru-hani.html に書き出しました。ブラウザで開けます。"; exit $rc
+          fi
+          E bun /opt/brain/kit/kengen-4dan/check.ts $CJ --keys $KEYS --url http://127.0.0.1:3133 --write-test ;;
+  search) [ $# -ge 3 ] || { echo "使い方: ./brain search <メンバーの id> \"<質問>\""; exit 2; }
+          shift; E bun /opt/brain/tools/search.ts "$@" ;;
+  write)  [ $# -ge 5 ] || { echo "使い方: ./brain write <メンバーの id> <slug> \"<題>\" \"<本文>\""; exit 2; }
+          shift; E bun /opt/brain/tools/kaku.ts "$@" ;;
+  connect) company; [ $# -ge 2 ] || { echo "使い方: ./brain connect <メンバーの id>"; exit 2; }
+          E bun /opt/brain/tools/connect.ts $CJ "$2" --keys $KEYS --url "${BRAIN_PUBLIC_URL:-http://127.0.0.1:${BRAIN_PORT:-3133}}/mcp" ;;
+  demo)
+    if [ -f config/company.json ] && ! cmp -s config/company.json sample/company.json; then
+      echo "config/company.json が既にあります。見本は、まっさらな所でだけ入れられます。"; exit 2
+    fi
+    mkdir -p docs config; cp -R sample/docs/. docs/; cp sample/company.json config/company.json
+    "$0" apply --yes; "$0" sync; "$0" check
+    echo; echo "== 同じ質問を、3人の鍵で"
+    for m in shacho sato suzuki; do "$0" search $m "値引きの承認は誰がしますか"; done
+    echo; echo "== 営業の佐藤さんの AI が打ち合わせの決定を書き足し、ほかの人の AI が探す"
+    "$0" write sato kettei/2026-11-aozora-nebiki "青空建設 値引きの決定" "2026-11-19 の打ち合わせで決定。青空建設の11月の見積は値引き8パーセントとし、専務が承認した。"
+    for m in tanaka shacho suzuki; do "$0" search $m "青空建設の値引きは何パーセントに決まりましたか"; done
+    "$0" write partner-a kettei/shagai-test "社外から書く" "書けてはいけない" || true
+    ;;
+  log)
+    # だれの鍵が・いつ・何をしたか（断られた呼び出しも）を CSV で出す。質問文や資料の中身は、エンジンが記録に残さない
+    days="${2:-30}"; case "$days" in ''|*[!0-9]*) echo "使い方: ./brain log [さかのぼる日数。既定は30]"; exit 2 ;; esac
+    $DC exec -T db psql -U brain -d brain -v ON_ERROR_STOP=1 -c "\\copy (select to_char(created_at at time zone 'Asia/Tokyo','YYYY-MM-DD HH24:MI:SS') as \"日時\", coalesce(agent_name,'') as \"だれ\", operation as \"したこと\", status as \"結果\", coalesce(error_message,'') as \"断った理由\", latency_ms as \"ミリ秒\" from mcp_request_log where created_at > now() - interval '$days days' order by id) to stdout with csv header"
+    ;;
+  backup)
+    # DB・エンジンの設定・資料・鍵・会社の形・DB のパスワードを、1つのファイルにまとめる
+    mkdir -p backup; f="backup/brain-$(date +%Y%m%d-%H%M%S).tar.gz"; w="$(mktemp -d)"
+    $DC exec -T db pg_dump -U brain -d brain -Fc > "$w/db.dump"
+    E tar czf - -C /data --exclude=./home/.gbrain/run . > "$w/home.tar.gz"
+    cp .env "$w/env"; [ -f config/company.json ] && cp config/company.json "$w/company.json"
+    ( umask 077; tar czf "$f" -C "$w" . -C "$PWD" docs keys )
+    rm -rf "$w"
+    echo "$f に書き出しました（$(du -h "$f" | cut -f1)）。鍵と DB のパスワードが入っています。置き場所に気をつけてください。"
+    ;;
+  restore)
+    [ $# -ge 2 ] && [ -f "$2" ] || { echo "使い方: ./brain restore <backup のファイル>   ※まっさらな所（./brain up の前）で実行します"; exit 2; }
+    if [ -f .env ] || [ -n "$($DC ps -aq 2>/dev/null)" ]; then echo "ここには既に環境があります。復元は、まっさらな所でだけできます（今の環境を消すなら ./brain down の後、docker compose down -v と .env の削除）。"; exit 2; fi
+    w="$(mktemp -d)"; tar xzf "$2" -C "$w"
+    ( umask 077; cp "$w/env" .env ); set -a; . ./.env; set +a
+    mkdir -p docs keys config; cp -R "$w/docs/." docs/; cp -R "$w/keys/." keys/
+    [ -f "$w/company.json" ] && cp "$w/company.json" config/company.json
+    $DC up -d --build db
+    i=0; until $DC exec -T db pg_isready -U brain -d brain >/dev/null 2>&1; do i=$((i+1)); [ $i -gt 60 ] && { echo "DB が立ち上がりません。"; exit 1; }; sleep 2; done
+    $DC exec -T db pg_restore -U brain -d brain --clean --if-exists --no-owner < "$w/db.dump"
+    $DC run --rm --no-deps -T --entrypoint sh engine -c 'mkdir -p /data && tar xzf - -C /data' < "$w/home.tar.gz"
+    rm -rf "$w"
+    $DC up -d --build
+    echo "立ち上がるのを待っています"; wait_ready
+    # 資料のフォルダは置き直されているので、AI からの書き込みが通るように印を付け直す
+    [ -f config/company.json ] && E bun /opt/brain/tools/restamp.ts $CJ --yes
+    echo "復元しました。./brain check で、読める範囲が元のとおりかを確かめてください。"
+    ;;
+  restamp) company; shift; E bun /opt/brain/tools/restamp.ts $CJ "$@" ;;
+  gbrain) shift; E gbrain "$@" ;;
+  status) $DC ps; E gbrain --version 2>&1 | grep -v '^\[gbrain notice' ;;
+  logs)   shift; $DC logs --tail "${1:-100}" engine ;;
+  down)   $DC down ;;
+  *) cat <<'U'
+使い方:
+  ./brain up              立てる（初回は DB とエンジンを組み立て、日本語の索引を足す）
+  ./brain demo            見本の会社（6人・文書9件）を入れて、権限と日本語検索を確かめる
+  ./brain apply           会社の形（config/company.json）を入れる下見。--yes を付けると入れる
+  ./brain sync            docs/ の文書を取り込む
+  ./brain check           1人ずつの鍵で実際に呼び、読める・読めないが決めた形どおりかを表にする
+  ./brain check --html    同じ表を、理由つきの1枚の HTML（yomeru-hani.html）に書き出す
+  ./brain search <id> "<質問>"   その人の鍵で検索する
+  ./brain connect <id>    その人の AI（Claude Code など）をつなぐ鍵を作る
+  ./brain log [日数]      だれの鍵が・いつ・何をしたかを CSV で出す（既定は30日ぶん）
+  ./brain backup          DB・設定・資料・鍵を、backup/ の下の1つのファイルにまとめる
+  ./brain restore <file>  まっさらな所に、backup のファイルから戻す
+  ./brain restamp         docs/ のフォルダを置き直した後、AI からの書き込みが断られる時の手当て（下見。--yes で実行）
+  ./brain gbrain <...>    エンジンのコマンドをそのまま呼ぶ（例: ./brain gbrain access member disable sato）
+  ./brain status | logs | down
+U
+    ;;
+esac

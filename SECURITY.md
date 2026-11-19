@@ -14,4 +14,4 @@
 ## 使う人が守る物
 
 - `.env`・`keys/`・`backup/` には、パスワードと鍵が入ります。リポジトリに入れず、読める人を絞ってください
-- 鍵は本人だけに渡してください。漏れた時は `./kioku gbrain auth revoke <id>-ai` で取り消します
+- 鍵は本人だけに渡してください。漏れた時は `./brain gbrain auth revoke <id>-ai` で取り消します

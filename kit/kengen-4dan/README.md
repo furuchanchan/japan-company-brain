@@ -30,7 +30,7 @@ gbrain に、日本の会社でよくある4段の権限（役員・部門・全
 
 ## 入れ方
 
-この一式では `./kioku apply`・`./kioku sync`・`./kioku check` が、下のコマンドを代わりに呼びます。道具だけを別の gbrain に使う時は、gbrain を動かしているホストで下のとおり実行します（Bun が要ります）。
+この一式では `./brain apply`・`./brain sync`・`./brain check` が、下のコマンドを代わりに呼びます。道具だけを別の gbrain に使う時は、gbrain を動かしているホストで下のとおり実行します（Bun が要ります）。
 
 1. `config/company.example.json` を写して、会社の形を書く
    - `owner`：持ち主（役員から1人）。すべての決まりの読み手に必ず入ります

@@ -1,8 +1,8 @@
 # 利用している部品とライセンス
 
-このリポジトリに入っているコード（`kioku`・`kit/`・`tools/`・`docker/`・`sample/`）は MIT License です（[LICENSE](LICENSE)）。
+このリポジトリに入っているコード（`brain`・`kit/`・`tools/`・`docker/`・`sample/`）は MIT License です（[LICENSE](LICENSE)）。
 
-`./kioku up` を実行すると、次の部品をそれぞれの配布元から取り込んで Docker のイメージを組み立てます。
+`./brain up` を実行すると、次の部品をそれぞれの配布元から取り込んで Docker のイメージを組み立てます。
 このリポジトリには、これらの部品のコードは入っていません。部品のコードは変えていません。
 
 | 部品 | 役目 | バージョン | ライセンス | 配布元 |

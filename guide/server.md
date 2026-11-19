@@ -12,28 +12,28 @@
 
 1. サーバーで、README の「自分の会社で使う」の1〜4を行います
 2. みんなの AI から届くように、外へ開く口を決めます。下の2つのどちらかです
-3. `./kioku connect <id>` で1人ずつ鍵を作り、本人に渡します
+3. `./brain connect <id>` で1人ずつ鍵を作り、本人に渡します
 
 ### 社内のネットワークや VPN の中だけで使う（すすめる形）
 
-`./kioku up` で開く口はサーバー自身からしか届かない `127.0.0.1:3133` です。
+`./brain up` で開く口はサーバー自身からしか届かない `127.0.0.1:3133` です。
 社内の PC から届かせるには、サーバーの手前に HTTPS の中継（リバースプロキシ）を置き、`127.0.0.1:3133` へ渡します。
 そのうえで、AI から見える URL を `.env` に書いて立て直します。
 
 中継に [Caddy](https://caddyserver.com/) を使う時の設定の例です（`Caddyfile`）。
 
 ```
-kioku.example.co.jp {
+brain.example.co.jp {
 	reverse_proxy 127.0.0.1:3133
 }
 ```
 
 ```bash
-echo 'KIOKU_PUBLIC_URL=https://kioku.example.co.jp' >> .env
-./kioku down && ./kioku up
+echo 'BRAIN_PUBLIC_URL=https://brain.example.co.jp' >> .env
+./brain down && ./brain up
 ```
 
-`./kioku connect <id>` が表示するつなぎ先もこの URL になります。
+`./brain connect <id>` が表示するつなぎ先もこの URL になります。
 
 ### インターネットに開く
 
@@ -48,20 +48,20 @@ echo 'KIOKU_PUBLIC_URL=https://kioku.example.co.jp' >> .env
 | バックアップから別の場所へ復元する | 確かめた |
 | HTTPS の中継（Caddy 2）を手前に置き、別の入れ物からその URL でつなぐ | 確かめた（1人ずつの鍵で43か所が決めた形どおり。AI の鍵でもつながる）。証明書は Caddy が作る試し用の物で確かめました |
 | 実際のドメインと証明書で、別の PC からつなぐ | まだ確かめていません |
-| `KIOKU_PUBLIC_URL` を付けた時の動き | 確かめた（鍵の案内とつなぎ先の表示がその URL に替わり、権限の43か所も通る） |
+| `BRAIN_PUBLIC_URL` を付けた時の動き | 確かめた（鍵の案内とつなぎ先の表示がその URL に替わり、権限の43か所も通る） |
 | クラウドの DB サービス（RDS・Cloud SQL など）を使う構成 | 用意していません。この一式は、同じサーバーの中に DB を立てます |
 
 ## 毎日すること
 
-- バックアップ：`./kioku backup` を毎日1回、定期の実行（cron など）に入れ、できたファイルを別の場所へ写します
-- 人の出入り：入った人は `config/company.json` に足して `./kioku apply --yes`、辞めた人は `./kioku gbrain access member disable <id>`
-- 確かめ：会社の形を変えた後は `./kioku check` を実行し、違う所が0か所であることを見ます
+- バックアップ：`./brain backup` を毎日1回、定期の実行（cron など）に入れ、できたファイルを別の場所へ写します
+- 人の出入り：入った人は `config/company.json` に足して `./brain apply --yes`、辞めた人は `./brain gbrain access member disable <id>`
+- 確かめ：会社の形を変えた後は `./brain check` を実行し、違う所が0か所であることを見ます
 
 ## バージョンを上げる
 
 エンジンのバージョンは `docker/engine.Dockerfile` に書いた1つに固定しています。上げる時は、次の順で行います。
 
-1. `./kioku backup` を取ります
+1. `./brain backup` を取ります
 2. `docker/engine.Dockerfile` のバージョンとコミットを替えます
 3. `sh tools/selftest.sh` を回し、全部合格することを見ます（今の環境には触れません）
-4. `./kioku up` で立て直し、`./kioku check` を実行します
+4. `./brain up` で立て直し、`./brain check` を実行します
