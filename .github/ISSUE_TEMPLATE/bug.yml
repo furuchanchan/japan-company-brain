@@ -1,0 +1,31 @@
+name: 不具合
+description: 動かない・表示と違う動きをする
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 会社の資料や鍵は貼らないでください。弱い所の報告は SECURITY.md の手順で知らせてください。
+  - type: textarea
+    id: what
+    attributes:
+      label: 何をしようとして、何が起きたか
+      description: 実行したコマンドと、出た表示をそのまま貼ってください
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: どうなってほしいか
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: 動かしている所
+      description: OS と Docker のバージョン（例 Ubuntu 24.04、Docker 27）
+  - type: checkboxes
+    id: demo
+    attributes:
+      label: 見本の会社で起きるか
+      options:
+        - label: "`./brain demo` を入れた、まっさらな所でも起きる"

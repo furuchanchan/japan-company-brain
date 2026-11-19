@@ -1,37 +1,50 @@
 # Japan Company Brain
 
-社員それぞれの AI が会社で決まったことを共有するための記憶です。自分のサーバーに1つのコマンドで立ちます。
+**社員それぞれの AI が会社で決まったことを共有する、会社の記憶です。**
 
-営業の佐藤さんが Claude Code に書かせた決定を、同じ営業の田中さんの AI が日本語の質問で探せます。人事の鈴木さんの AI には返りません。
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+[![Engine: gbrain](https://img.shields.io/badge/engine-gbrain-blue?style=flat-square)](https://github.com/garrytan/gbrain)
+[![selftest](https://img.shields.io/github/actions/workflow/status/furuchanchan/japan-company-brain/selftest.yml?style=flat-square&label=selftest)](https://github.com/furuchanchan/japan-company-brain/actions/workflows/selftest.yml)
 
-## だれの、どんな困りごとに効くか
+[5分で試す](#5分で試す) · [自分の会社で使う](#自分の会社で使う) · [読める範囲](#読める範囲) · [サーバーに置く](guide/server.md) · [Issues](https://github.com/furuchanchan/japan-company-brain/issues)
 
-社員が Claude Code などの AI を使い始めた会社で、次の3つが起きている時に使います。
+社員が Claude Code などの AI を使い始めると、決まったことは決めた人の AI の中にしか残りません。隣の人の AI は、同じことをもう1度調べます。
 
-- 決まったことが、決めた人の AI の中にしか残らない。隣の人の AI は同じことをもう1度調べる
-- 会社の資料を AI に読ませたいが、人事や役員の資料まで全員の AI に返るのは困る
-- 資料を社外のサービスに預けられない
+Japan Company Brain は、AI が仕事の中で決まったことを書き足し、ほかの人の AI が日本語の質問で探せる置き場です。読める範囲は人ごとに変わり、資料は自分のサーバーから出ません。
 
-## gbrain をそのまま入れた時との違い
-
-エンジンは [gbrain](https://github.com/garrytan/gbrain) です。コードは変えていません。日本の会社で使う時に止まる3か所を、周りの道具で埋めています。
-
-| | gbrain をそのまま | この一式 |
-|---|---|---|
-| 日本語の質問文で探す | 「値引きの承認は誰がしますか」など4問が、4問とも0件 | 4問とも当たる（上位はすべて正解） |
-| AI が書き足したページ | 書いた本人の鍵にしか返らない | 同じ部門と役員の鍵に返る。ほかの部門には返らない |
-| 権限を入れる | 置き場・メンバー・鍵のコマンドを順に実行する | 会社の形を書いた1つのファイルから入れ、43か所を実際に呼んで表にする |
-
-左の列は v0.60.736.0 を手元で確かめた結果です（2026-11-18）。検索は架空の文書100,000ページで測りました。測り方は [日本語検索の直し](kit/nihongo-kensaku/README.md) と [権限のひな形](kit/kengen-4dan/README.md) にあります。
+> **営業の佐藤さん → 自分の AI**
+> 青空建設の11月の見積は値引き8パーセントで、専務が承認した。残しておいて。
+>
+> **営業の田中さん → 自分の AI**
+> 青空建設の値引きは何パーセントに決まりましたか。
+>
+> **田中さんの AI** は、佐藤さんの AI が書いた決定を見つけて答えます。
+> **人事の鈴木さんの AI** には、この決定は返りません。
 
 ## できること
 
-- AI が書き足せます。打ち合わせの決定を営業の人の AI が書くと、同じ部門の人の AI がすぐに探せます。社外の鍵では書けません
-- 日本語の質問でそのまま探せます。質問文を語に分けてから探します
-- 人によって読める範囲が変わります。役員・部門・全社・社外の4段です
-- 入れた結果を確かめられます。1人ずつの鍵で実際に呼び、読める・読めないを表にします
-- 資料は自分のサーバーに残ります。外へ開く口はこのホストの中だけに向いた1つです。外のサービスへは何も送りません
-- バックアップと復元、だれの鍵がいつ何をしたかの記録の書き出しができます
+| | |
+|---|---|
+| **AI が書き足す** | 打ち合わせの決定を自分の AI に書かせると、同じ部門の人の AI がすぐに探せます |
+| **日本語の質問で探す** | 「値引きの承認は誰がしますか」のような文のまま探せます |
+| **人ごとに読める範囲が変わる** | 役員・部門・全社・社外の4段を、会社の形を書いた1つのファイルから入れます |
+| **入れた権限を表で見る** | 1人ずつの鍵で実際に呼び、だれに何が返るかを1枚の表にします |
+| **自分のサーバーで動く** | 資料・DB・鍵は立てたサーバーに残ります。外のサービスへは何も送りません |
+| **記録とバックアップ** | だれの鍵がいつ何をしたかを CSV に出せます。1つのファイルから復元できます |
+
+## 読める範囲
+
+AI は、つないだ人の鍵で読める物だけを返します。読めない資料は「無い」と同じ答えになります。
+
+| 段 | 読める物 | 書く先 |
+|---|---|---|
+| 役員 | 全社と全部門。役員だけのフォルダも読める | 全社 |
+| 部門 | 自分の部門と全社。ほかの部門と役員だけのフォルダは読めない | 自分の部門 |
+| 社外 | 全社のうち、名指ししたフォルダだけ | 書けない |
+
+入れた結果は `./brain check --html` で1枚の表になります。情報システムや上長に見せる時に使えます。
+
+![読める範囲の表。資料ごとに、役員・営業・人事・社外のだれが読めるかを●で示す](assets/yomeru-hani.png)
 
 ## 5分で試す
 
@@ -41,73 +54,16 @@
 git clone https://github.com/furuchanchan/japan-company-brain.git
 cd japan-company-brain
 ./brain up      # 立てる。初回は組み立てに数分かかります
-./brain demo    # 見本の会社（6人・文書9件）を入れて確かめる
+./brain demo    # 見本の会社（6人・文書9件）を入れて動かす
 ```
 
-`./brain demo` の終わりに、次の2つが出ます。
-
-1つ目は権限の表です。43か所を実際に呼び、決めた形と違う所を数えます。
-
-```
-確かめる物                       ページ                          社長    専務    営業 佐藤  営業 田中  人事 鈴木  協力会社A
-役員だけ（全社 keiei/）          zensha:keiei/yosan-2027         読める  読める  読めない   読めない   読めない   読めない
-全社（全社）                     zensha:kitei/keihi-seisan       読める  読める  読める     読める     読める     読めない
-社外にも出す（全社 shagai/）     zensha:shagai/kaisha-annai      読める  読める  読める     読める     読める     読める
-部門（営業）                     eigyo:mitsumori/2026-11-aozora  読める  読める  読める     読める     読めない   読めない
-部門（人事）                     jinji:saiyo/2027-keikaku        読める  読める  読めない   読めない   読める     読めない
-
-43 か所を確かめ、決めた形と違う所は 0 か所。
-```
-
-2つ目は同じ質問を3人の鍵で投げた結果です。
-
-```
-shacho「値引きの承認は誰がしますか」→ 2件
-  [eigyo] 青空建設 11月の見積（mitsumori/2026-11-aozora）
-  [eigyo] 青空建設（架空のお客さま）（kokyaku/aozora-kensetsu）
-sato「値引きの承認は誰がしますか」→ 2件
-suzuki「値引きの承認は誰がしますか」→ 0件
-```
-
-営業の資料なので、人事の鈴木さんには返りません。
-
-3つ目は、AI が書き足す場面です。営業の佐藤さんの鍵で決定を1つ書き、ほかの人の鍵で探します。
-
-```
-sato が書いた: 青空建設 値引きの決定（kettei/2026-11-aozora-nebiki）
-tanaka「青空建設の値引きは何パーセントに決まりましたか」→ 4件
-  [eigyo] 青空建設 値引きの決定（kettei/2026-11-aozora-nebiki）
-  [eigyo] 青空建設 11月の見積（mitsumori/2026-11-aozora）
-  [eigyo] 青空建設（架空のお客さま）（kokyaku/aozora-kensetsu）
-  [zensha] 経費精算の決まり（kitei/keihi-seisan）
-suzuki「青空建設の値引きは何パーセントに決まりましたか」→ 1件
-  [zensha] 経費精算の決まり（kitei/keihi-seisan）
-partner-a: 書けない（この鍵は読むだけ）
-```
-
-同じ営業の田中さんには書き足した決定が返り、人事の鈴木さんには全社の資料だけが返ります。協力会社の鍵では書けません。
-
-同じ表を、理由つきの1枚の HTML にも書き出せます。行を押すと、そうなる理由と、それを決めている設定が開きます。
-
-```bash
-./brain check --html    # yomeru-hani.html に書き出す
-```
-
-![読める範囲の表。資料ごとに、役員・営業・人事・社外のだれが読めるかを●で示す](assets/yomeru-hani.png)
+`./brain demo` は、見本の会社で権限の表を出し、同じ質問を3人の鍵で投げ、営業の人の AI が書き足した決定をほかの人の鍵で探します。
 
 ## 自分の会社で使う
 
-見本を入れずに、まっさらな所から始めます。
-
-1. 立てる
-
-   ```bash
-   ./brain up
-   ```
-
-2. 会社の形を書く。`config/company.example.json` を `config/company.json` に写し、部門とメンバーを書き換えます。項目の説明は [権限のひな形](kit/kengen-4dan/README.md) にあります
-
-3. 資料を置く。`docs/` の下に、置き場ごとのフォルダを作り、Markdown のファイルを入れます
+1. `./brain up` で立てます
+2. `config/company.example.json` を `config/company.json` に写し、部門とメンバーを書きます（項目の説明は [権限のひな形](kit/kengen-4dan/README.md)）
+3. `docs/` の下に置き場ごとのフォルダを作り、Markdown のファイルを入れます
 
    ```
    docs/zensha/   全社の資料（keiei/ は役員だけ、shagai/ は社外にも出す）
@@ -115,112 +71,59 @@ partner-a: 書けない（この鍵は読むだけ）
    docs/jinji/    人事の資料
    ```
 
-4. 入れて、確かめる
+4. 入れて、表で見ます
 
    ```bash
-   ./brain apply          # 下見。何も変えません
-   ./brain apply --yes    # 入れる
+   ./brain apply --yes    # 会社の形を入れる（--yes を外すと下見）
    ./brain sync           # 資料を取り込む
-   ./brain check          # 権限の表を出す
-   ./brain check --html   # 同じ表を HTML に書き出す（情報システムや上長に見せる時に）
+   ./brain check          # 読める範囲の表を出す
    ```
 
-5. 1人ずつ、AI をつなぐ鍵を作る
+5. 1人ずつ、AI をつなぐ鍵を作ります
 
    ```bash
    ./brain connect sato
    ```
 
-   鍵は `keys/sato.token.txt` に置かれ、つなぐコマンドが表示されます。鍵は本人だけに渡してください。
+   つなぐコマンドが表示されます。Claude Code なら次の形です。
 
-資料を足した時は、`./brain sync` をもう1度実行します。
-人を足した時は、`config/company.json` に足してから `./brain apply --yes` をもう1度実行します。
-退職や異動の時は `./brain gbrain access member disable <id>` を実行すると、その人の鍵が次の呼び出しから使えなくなります。
+   ```bash
+   claude mcp add company-brain -t http http://127.0.0.1:3133/mcp -H "Authorization: Bearer <鍵>"
+   ```
+
+会社のみんなで使う時の置き方は [サーバーに置く](guide/server.md)、バックアップ・記録・人の出入りは [毎日の運用](guide/operations.md) にあります。コマンドの一覧は `./brain` で出ます。
 
 ## しくみ
 
 ```
-各自の AI ──→ 日本語検索の中継（127.0.0.1:3133）──→ エンジン ──→ Postgres
-                質問文を語に分ける                  鍵を確かめ、        pgvector と
-                                                    読める範囲で返す    pg_bigm の索引
+各自の AI ──→ 日本語検索の中継 ──→ エンジン（gbrain）──→ Postgres
+                質問文を語に分ける    鍵を確かめ、読める範囲で返す
 ```
 
-- エンジンには [gbrain](https://github.com/garrytan/gbrain)（MIT License）を使っています。コードは変えず、確かめたバージョン（v0.60.736.0）を指定して取り込みます
-- この一式が足すのは、権限のひな形・日本語検索の中継と索引・立てる手順・確かめの道具です
-- エンジンのコマンドは `./brain gbrain <...>` でそのまま呼べます
+エンジンは [gbrain](https://github.com/garrytan/gbrain)（MIT License）です。コードは変えず、バージョンを指定して取り込みます。この一式は、日本の会社で使う時に要る3つを周りに足しています。
 
-細かい説明は [権限のひな形](kit/kengen-4dan/README.md) と [日本語検索の直し](kit/nihongo-kensaku/README.md) にあります。
+| | gbrain をそのまま | この一式 |
+|---|---|---|
+| 日本語の質問文で探す | 文のままでは当たらない | 文のまま当たる |
+| AI が書き足したページ | 書いた本人にしか返らない | 同じ部門と役員に返る |
+| 権限を入れる | コマンドを順に実行する | 1つのファイルから入れ、表で見る |
 
-## 毎日の運用
+細かい説明は [日本語検索の直し](kit/nihongo-kensaku/README.md)・[権限のひな形](kit/kengen-4dan/README.md)・[確かめた範囲と、まだの所](guide/tested.md) にあります。
 
-### バックアップと復元
+## コントリビュート
 
-```bash
-./brain backup                      # backup/brain-日付-時刻.tar.gz に書き出す
-./brain restore backup/brain-….tar.gz   # まっさらな所（./brain up の前）に戻す
-```
+使ってみて困った所や足りない所を [Issue](https://github.com/furuchanchan/japan-company-brain/issues/new/choose) に書いてもらえるのが、いちばん助かります。直しを送る時は [CONTRIBUTING.md](CONTRIBUTING.md) を見てください。
 
-バックアップには、DB・エンジンの設定・`docs/`・`keys/`・会社の形・DB のパスワードが入ります。鍵とパスワードが入っているので、置き場所に気をつけてください。
-復元すると、渡してあった AI の鍵はそのまま使えます。
+## セキュリティ
 
-### だれが何をしたかの記録
-
-```bash
-./brain log 30 > kiroku.csv    # 30日ぶん
-```
-
-```
-日時,だれ,したこと,結果,断った理由,ミリ秒
-2026-11-19 17:59:41,shacho,list_pages,success,"",18
-2026-11-19 17:59:41,sato,get_page,error,Page not found: keiei/yosan-2027,18
-```
-
-読める範囲の外のページを呼ぶと、「無い」と同じ答えを返したことが残ります。
-質問文と、読めたページの名前は、エンジンが記録に残しません。
-
-### docs/ のフォルダを置き直した時
-
-リポジトリのフォルダを別の場所へ移したり、`docs/` を作り直したりすると、AI からの書き込みが `recovery_required` で断られます。エンジンが、資料のフォルダが入れ替わっていないかを見ているためです。中身が同じことをエンジンに確かめさせて、印を付け直します。
-
-```bash
-./brain restamp          # 下見。置き直されたフォルダを数えます
-./brain restamp --yes    # 印を付け直す
-```
-
-`./brain restore` は、この手当てまで自動でします。
-
-### サーバーに置く
-
-会社のみんなで使う時の置き方は [サーバーに置く](guide/server.md) にあります。
-
-## 確かめた範囲と、まだの所
-
-手元の Docker と見本の会社で、次の8つを確かめました（2026-11-19）。`sh tools/selftest.sh` で、同じ確かめをまっさらな写しで回せます（8つ目だけは手で確かめました）。
-
-1. まっさらな所から `./brain up` と `./brain demo` が通り、権限の43か所が決めた形どおり
-2. 同じ質問文の検索が人によって変わる（営業の2人には2件、人事には0件）。営業の人の鍵で書き足したページは、営業と役員には返り、人事には返らない。社外の鍵では書けない
-3. `./brain check` を続けて回しても通る
-4. 表を HTML に、記録を CSV に書き出せる
-5. バックアップから、まっさらな所に復元できる。復元の後も43か所が同じで、AI からも書き込める
-6. 復元の後も、渡してあった AI の鍵が使える
-7. メンバーを止めると、その人の鍵は次の呼び出しから使えない
-8. 実物の Claude Code（2.1.328）からつないで同じ質問をすると、営業の佐藤さんの鍵では見積のページから答えが返り、人事の鈴木さんの鍵では「見つからない」と返る
-
-次の3つは、まだ確かめていないか、用意していません。
-
-- 意味で探す検索（埋め込み）。この一式は言葉で探す検索だけを有効にして立てます。エンジンの側の設定で足せますが、この一式では確かめていません
-- Claude Code のほかの AI（ChatGPT・Cursor など）からつないだ時の動き
-- 2台以上のホスト、100人をこえる会社、実際のドメインと証明書で別の PC からつなぐ構成（HTTPS の中継を手前に置く形は、試し用の証明書で確かめました。[サーバーに置く](guide/server.md) に、確かめた所とまだの所を分けて書いてあります）
-
-## 注意
-
-- `.env`（DB のパスワード）と `keys/`（1人ずつの鍵）は秘密です。リポジトリに入れないでください（`.gitignore` に入れてあります）
-- エンジンのバージョンを上げる時は、`docker/engine.Dockerfile` のバージョンとコミットを替えます。まっさらな所で `./brain demo` が通ることを確かめてから、使っている環境に入れてください
+弱い所を見つけた時は、公開の Issue に書かず、[SECURITY.md](SECURITY.md) の手順で知らせてください。`.env`・`keys/`・`backup/` には鍵とパスワードが入るので、リポジトリに入れないでください。
 
 ## 作っている人
 
-[Kotaro Furuno](https://github.com/furuchanchan)（株式会社TechWorker 代表）が作っています。自社でも gbrain を毎日使っています。困った所や足りない所は [Issues](https://github.com/furuchanchan/japan-company-brain/issues) に書いてください。
+[Kotaro Furuno](https://github.com/furuchanchan)（株式会社TechWorker 代表）が作っています。自社でも gbrain を毎日使っています。
+
+gbrain の作者・運営元とは関係のない第三者が作っています。
 
 ## ライセンス
 
-MIT License です（[LICENSE](LICENSE)）。同梱・利用している部品のライセンスは [THIRD_PARTY.md](THIRD_PARTY.md) にあります。
+[MIT License](LICENSE) です。利用している部品のライセンスは [THIRD_PARTY.md](THIRD_PARTY.md) にあります。

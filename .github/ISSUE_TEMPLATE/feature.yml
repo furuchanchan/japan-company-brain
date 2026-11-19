@@ -1,0 +1,17 @@
+name: 足りない所・ほしい機能
+description: こう使いたいが、今はできない
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 困っていること
+      description: どんな会社で、だれが、何をしようとして困っているか
+    validations:
+      required: true
+  - type: textarea
+    id: want
+    attributes:
+      label: どうなってほしいか
+    validations:
+      required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 弱い所の報告（非公開）
+    url: https://github.com/furuchanchan/japan-company-brain/security/advisories/new
+    about: 公開の Issue には書かず、こちらから知らせてください
+  - name: エンジン（gbrain）の問題
+    url: https://github.com/garrytan/gbrain/issues
+    about: 記憶・検索・権限のエンジンそのものの問題は、gbrain のリポジトリへ
