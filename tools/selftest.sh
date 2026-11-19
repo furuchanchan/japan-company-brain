@@ -6,7 +6,7 @@ here="$(cd "$(dirname "$0")/.." && pwd)"
 export BRAIN_UID="$(id -u)" BRAIN_GID="$(id -g)"
 export COMPOSE_PROJECT_NAME=brainselftest BRAIN_PORT="${BRAIN_TEST_PORT:-3139}"
 w="$(mktemp -d)"; a="$w/a"; b="$w/b"; mkdir -p "$a" "$b"
-copy() { ( cd "$here" && git ls-files -co --exclude-standard | tar cf - -T - ) | tar xf - -C "$1"; }
+copy() { ( cd "$here" && git -c core.quotepath=off ls-files -z -co --exclude-standard | tar cf - --null -T - ) | tar xf - -C "$1"; }
 clean() { ( cd "$a" && docker compose down -v >/dev/null 2>&1 || true ); rm -rf "$w"; }
 trap clean EXIT
 ok() { echo "合格：$1"; }
@@ -18,10 +18,23 @@ grep -q "違う所は 0 か所" demo.log && ok "見本の会社で、読める�
 grep -q "suzuki「値引きの承認は誰がしますか」→ 0件" demo.log && grep -q "sato「値引きの承認は誰がしますか」→ 2件" demo.log && ok "質問文の検索が、人によって変わる" || ng "質問文の検索"
 grep -q "sato が書いた: 青空建設 値引きの決定" demo.log && grep -A1 "^tanaka「青空建設の値引きは" demo.log | grep -q "kettei/2026-11-aozora-nebiki" && ! grep -A2 "^suzuki「青空建設の値引きは" demo.log | grep -q "kettei/" && grep -q "partner-a: 書けない" demo.log && ok "AI が書き足した決定が、同じ部門には返り、人事には返らない。社外の鍵では書けない" || ng "書き足し"
 for q in "AI" "インボイス" "高橋" "株式会社山並商事" "見積り" "2026年4月"; do ./brain search shacho "$q" | grep -q "ai-riyou" || ng "表記ゆれ（$q）"; done; ok "書き方がちがっても探せる（全角と半角・異体字・(株)・送り仮名・和暦）"
+for q in "2026年10月1日" "2026年10月"; do ./brain search shacho "$q" | grep -q "keihi-seisan" || ng "和暦の残り（$q）"; done
+docker compose exec -T engine bun /opt/brain/kit/nihongo-kensaku/yure.ts --soroeru < kit/nihongo-kensaku/yure.rei.txt > ts.out
+docker compose exec -T db psql -U brain -d brain -qAtc "create temp table r(n serial, l text); copy r(l) from stdin; select ja_yure_k(l) from r order by n" < kit/nihongo-kensaku/yure.rei.txt > sql.out
+cmp -s ts.out sql.out && grep -q "2019年5月" ts.out && grep -q "2026年4月1日 改定" ts.out && ok "和暦の残り（R8.10.1・令和八年十月一日）もそろい、問いの側と資料の側が同じ形になる" || ng "表記ゆれの、問いの側と資料の側のずれ"
+grep -A1 "有給休暇の申請はいつまで" demo.log | grep -q "就業規則" && grep -A3 "切符と宿の手配は誰が" demo.log | grep -q "出張旅費規程" && ok "Word と PDF の資料（日本語のファイル名）を取り込んで探せる。PDF の部首の字と行の折り返しも直る" || ng "Word・PDF の取り込み"
+printf '営推の定例は毎週火曜の10時から。議事は情シスが残す。\r\n' | iconv -f UTF-8 -t CP932 > docs/zensha/kitei/定例メモ.txt
+printf '{"ryakugo":[["営推","営業推進部"]]}\n' > config/yure.json
+./brain reload >/dev/null 2>&1 || ng "表の入れ直し"
+./brain sync >/dev/null 2>&1; ./brain search shacho "営業推進部の定例" | grep -q "定例メモ" && ok "Shift_JIS のテキストを取り込める。社内の略語（営推）を、正式な名前（営業推進部）で探せる" || ng "テキストと略語"
+rm docs/zensha/kitei/定例メモ.txt; ./brain sync >/dev/null 2>&1; [ ! -f docs/zensha/kitei/定例メモ.txt.md ] && ! ./brain search shacho "営業推進部の定例" | grep -q "定例メモ" && ok "元の資料を消すと、写しとページも消える" || ng "元を消した後"
+cp sample/company-kenmu.json config/company.json; ./brain apply --yes >/dev/null 2>&1 || ng "兼務を入れる"
+./brain search yamada "値引きの承認は誰がしますか" | grep -q "\[eigyo\]" && ./brain search yamada "採用の計画" | grep -q "\[jinji\]" && ! ./brain search suzuki "値引きの承認は誰がしますか" | grep -q "\[eigyo\]" && ok "兼務の人は、主の部門と兼ねる部門の両方を読める" || ng "兼務"
 for i in 1 2 3; do ./brain check | grep -q "違う所は 0 か所" || ng "確かめの繰り返し（$i 回目）"; done; ok "確かめを3回続けて回せる"
 ./brain check --html >/dev/null && grep -q "<table>" yomeru-hani.html && ok "表を HTML に書き出せる" || ng "HTML の書き出し"
 [ "$(./brain log 1 | wc -l)" -gt 10 ] && ok "記録を CSV に書き出せる" || ng "記録の書き出し"
 ./brain connect sato >/dev/null
+docker compose exec -T engine bun -e "const r=await fetch('http://127.0.0.1:3133/mcp',{method:'POST',headers:{'content-type':'application/json',accept:'application/json, text/event-stream',authorization:'Bearer '+(await Bun.file('/srv/brain/keys/sato.token.txt').text()).trim()},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'selftest',version:'1'}}})});console.log(await r.text())" | grep -q '"instructions":"【この会社の記憶に書く時の決まり】' && ok "つないだ AI への案内の先頭に、記録の書き方の決まりが届く" || ng "書き方の決まり"
 ./brain backup >/dev/null 2>&1; f="$(ls "$a"/backup/*.tar.gz)"; cp "$f" "$w/b.tar.gz"
 docker compose down -v >/dev/null 2>&1
 copy "$b"; cd "$b"

@@ -1,0 +1,16 @@
+{
+  "_setsumei": "会社ごとの表記ゆれの表。config/yure.json に写して使う。直した後は ./brain reload。ryakugo は [社内の略語, 正式な名前]。ほかの語の一部にならない語だけを書く。itaiji・hojin・okurigana も kit/nihongo-kensaku/yure.json と同じ形で足せる。",
+  "ryakugo": [
+    [
+      "営推",
+      "営業推進部"
+    ],
+    [
+      "情シス",
+      "情報システム部"
+    ]
+  ],
+  "itaiji": {},
+  "hojin": [],
+  "okurigana": []
+}

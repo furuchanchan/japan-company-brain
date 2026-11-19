@@ -33,7 +33,11 @@ case "${1:-}" in
     echo "立ち上がりました。AI のつなぎ先: ${BRAIN_PUBLIC_URL:-http://127.0.0.1:${BRAIN_PORT:-3133}}/mcp"
     ;;
   apply)  company; shift; E bun /opt/brain/kit/kengen-4dan/apply.ts $CJ --keys $KEYS "$@" ;;
-  sync)   E gbrain sync --all --no-embed > .sync.log 2>&1 || { cat .sync.log; exit 1; }
+  sync)   # 先に、Word・PDF・Excel・PowerPoint・テキストを Markdown の写しにする（エンジンが取り込むのは Markdown だけ）
+          E /opt/henkan/bin/python /opt/brain/tools/henkan.py /srv/brain/docs
+          # 元のファイルが無くなったページを、検索から外す（エンジンは、消えたファイルのページを残すため）
+          E bun /opt/brain/tools/kesu.ts $CJ
+          E gbrain sync --all --no-embed > .sync.log 2>&1 || { cat .sync.log; exit 1; }
           grep -E "^--- Syncing|pages imported|added, ~|held|error" .sync.log || true; rm -f .sync.log ;;
   check)  company
           if [ "${2:-}" = "--html" ]; then
@@ -62,6 +66,14 @@ case "${1:-}" in
     "$0" write partner-a kettei/shagai-test "社外から書く" "書けてはいけない" || true
     echo; echo "== 書き方がちがっても探せる（資料は「ＡＩ」「令和8年」「㈱山並商事」「髙橋」と書いてある）"
     for q in "AI" "2026年4月" "株式会社山並商事" "高橋"; do "$0" search shacho "$q"; done
+    echo; echo "== Word と PDF の資料も探せる（就業規則.docx・出張旅費規程.pdf）"
+    "$0" search shacho "有給休暇の申請はいつまでにしますか"; "$0" search shacho "切符と宿の手配は誰がしますか"
+    ;;
+  reload)
+    # config/ の表（表記ゆれの yure.json、書き方の決まりの kakikata.md）を直した後に、DB の索引と中継に入れ直す
+    E bun /opt/brain/kit/nihongo-kensaku/yure.ts --sql | $DC exec -T db psql -U brain -d brain -v ON_ERROR_STOP=1 -q
+    $DC restart engine >/dev/null 2>&1; wait_ready
+    echo "入れ直しました。AI をつなぎ直すと、新しい決まりが届きます。"
     ;;
   log)
     # だれの鍵が・いつ・何をしたか（断られた呼び出しも）を CSV で出す。質問文や資料の中身は、エンジンが記録に残さない
@@ -104,9 +116,10 @@ case "${1:-}" in
   *) cat <<'U'
 使い方:
   ./brain up              立てる（初回は DB とエンジンを組み立て、日本語の索引を足す）
-  ./brain demo            見本の会社（6人・文書10件）を入れて、権限と日本語検索を確かめる
+  ./brain demo            見本の会社（6人・文書12件）を入れて、権限と日本語検索を確かめる
   ./brain apply           会社の形（config/company.json）を入れる下見。--yes を付けると入れる
-  ./brain sync            docs/ の文書を取り込む
+  ./brain sync            docs/ の文書を取り込む（Markdown のほか、Word・PDF・Excel・PowerPoint・テキスト）
+  ./brain reload          config/ の yure.json（社内の略語）・kakikata.md（書き方の決まり）を直した後に、入れ直す
   ./brain check           1人ずつの鍵で実際に呼び、読める・読めないが決めた形どおりかを表にする
   ./brain check --html    同じ表を、理由つきの1枚の HTML（yomeru-hani.html）に書き出す
   ./brain search <id> "<質問>"   その人の鍵で検索する

@@ -37,6 +37,7 @@ gbrain に、日本の会社でよくある4段の権限（役員・部門・全
    - `zensha`：全社の置き場。`path` は文書のフォルダ、`yakuin_folders` は役員だけのフォルダ、`shagai_folders` は社外にも出すフォルダ
    - `departments`：部門ごとの置き場
    - `members`：1人ずつ。`dan` は `yakuin`・`bumon`・`shagai` のどれか。`bumon` には `department` を書く
+   - 兼務の人には、主の部門を `department` に、兼ねる部門を `"kenmu": ["jinji"]` の形で書く。読めるのは主の部門・兼ねる部門・全社で、AI が書く先は主の部門です。後から兼務を足した時は、その人の鍵のファイル（`<鍵のフォルダ>/<id>.txt`）を消してから入れ直します
    - 文書のフォルダが git の管理でない時は、置き場に `"plain_directory": true` を書く（見本はこの形）
    - `rules`：追加の決まり。`{"source": "jinji", "prefix": "hyoka/", "readers": ["group:jinji"]}` の形
 2. 下見をする（何も変えません。実行するコマンドが順に出ます）

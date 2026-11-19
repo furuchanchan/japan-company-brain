@@ -13,7 +13,7 @@ const m = (C.members ?? []).find((x: any) => x.id === id);
 if (!m) { console.error(`会社の形に、メンバー ${id} がいません`); process.exit(2); }
 const Z = C.zensha, depts: any[] = C.departments ?? [];
 // 先頭が書く先。役員＝全社と全部門、部門＝自分の部門と全社、社外＝全社（読むだけ）
-const sources = m.dan === "yakuin" ? [Z.id, ...depts.map(d => d.id)] : m.dan === "bumon" ? [m.department, Z.id] : [Z.id];
+const sources = m.dan === "yakuin" ? [Z.id, ...depts.map(d => d.id)] : m.dan === "bumon" ? [m.department, ...(m.kenmu ?? []), Z.id] : [Z.id];
 const scopes = m.dan === "shagai" ? "read" : "read,write";
 const name = `${id}-ai`, out = `${keys}/${id}.token.txt`;
 const gb = (cmd: string[]) => { const r = Bun.spawnSync(["gbrain", ...cmd], { stdout: "pipe", stderr: "pipe" }); return { code: r.exitCode ?? 1, out: r.stdout.toString() + r.stderr.toString() }; };

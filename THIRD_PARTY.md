@@ -12,6 +12,8 @@
 | PostgreSQL | DB | 17 | PostgreSQL License | https://www.postgresql.org/ |
 | pgvector | 意味の検索の部品 | イメージ `pgvector/pgvector:pg17` に入っているバージョン | PostgreSQL License | https://github.com/pgvector/pgvector |
 | pg_bigm | 日本語の索引の部品 | v1.2-20250903 | PostgreSQL License | https://github.com/pgbigm/pg_bigm |
+| markitdown | Word・PDF・Excel・PowerPoint を Markdown に変える部品 | 0.1.7 | MIT License。Copyright (c) Microsoft Corporation | https://github.com/microsoft/markitdown |
+| Python | markitdown を動かす実行環境 | イメージ `oven/bun:1.4.4`（Debian 13）の python3 | Python Software Foundation License | https://www.python.org/ |
 
 ## gbrain が取り込む部品
 
@@ -27,6 +29,20 @@ gbrain は組み立ての時に自分の部品（npm のパッケージ）を取
 | LGPL-3.0 | 1（libheif-js 1.19.8。画像を読む部品） |
 
 GPL と AGPL の部品は0個でした。入れ子の部品（部品が取り込む部品）は数えていません。
+
+## markitdown が取り込む部品
+
+markitdown は組み立ての時に自分の部品（Python のパッケージ）を取り込みます。入れた後の36個を数えた結果です（2026-11-19。markitdown 自身を含み、pip を除く）。
+
+| ライセンス | 数 |
+|---|---|
+| MIT（MIT-0・MIT-CMU を含む） | 14（markitdown・pdfminer.six・pdfplumber・python-pptx・openpyxl・onnxruntime・Pillow など） |
+| BSD（2-Clause・3-Clause） | 13（pandas・NumPy・lxml・mammoth・pypdfium2 など。NumPy と pypdfium2 は、中に含む部品のライセンスを併記） |
+| Apache-2.0（BSD との選択を含む） | 6（magika・requests・flatbuffers・tzdata・cryptography・packaging） |
+| Python Software Foundation License | 2（defusedxml・typing_extensions） |
+| MPL-2.0 | 1（certifi。証明書の一覧。変換では使いません） |
+
+GPL と AGPL の部品は0個でした。変換は手元で動き、外のサービスを呼びません（ネットワークを切った入れ物で確かめました）。
 
 ## 組み立てたイメージを配る時
 

@@ -26,8 +26,10 @@ Japan Company Brain は、AI が仕事の中で決まったことを書き足し
 | | |
 |---|---|
 | **AI が書き足す** | 打ち合わせの決定を自分の AI に書かせると、同じ部門の人の AI がすぐに探せます |
+| **今ある資料を入れる** | Word・PDF・Excel・PowerPoint・テキスト（Shift_JIS も）を、フォルダに置くだけで取り込みます |
 | **日本語の質問で探す** | 「値引きの承認は誰がしますか」のような文のまま探せます |
-| **書き方がちがっても探す** | 資料が「ＡＩ」「㈱山並商事」「令和8年」「髙橋」でも、「AI」「株式会社山並商事」「2026年」「高橋」で当たります |
+| **書き方がちがっても探す** | 資料が「ＡＩ」「㈱山並商事」「令和8年」「髙橋」「営推」でも、「AI」「株式会社山並商事」「2026年」「高橋」「営業推進部」で当たります |
+| **書き方の決まりを配る** | だれが・いつ・正式な名前で書く決まりを、サーバーの1か所から全員の AI に届けます |
 | **人ごとに読める範囲が変わる** | 役員・部門・全社・社外の4段を、会社の形を書いた1つのファイルから入れます |
 | **入れた権限を表で見る** | 1人ずつの鍵で実際に呼び、だれに何が返るかを1枚の表にします |
 | **自分のサーバーで動く** | 資料・DB・鍵は立てたサーバーに残ります。外のサービスへは何も送りません |
@@ -55,16 +57,16 @@ AI は、つないだ人の鍵で読める物だけを返します。読めな�
 git clone https://github.com/furuchanchan/japan-company-brain.git
 cd japan-company-brain
 ./brain up      # 立てる。初回は組み立てに数分かかります
-./brain demo    # 見本の会社（6人・文書10件）を入れて動かす
+./brain demo    # 見本の会社（6人・文書12件）を入れて動かす
 ```
 
-`./brain demo` は、見本の会社で権限の表を出し、同じ質問を3人の鍵で投げ、営業の人の AI が書き足した決定をほかの人の鍵で探します。
+`./brain demo` は、見本の会社で権限の表を出し、同じ質問を3人の鍵で投げ、営業の人の AI が書き足した決定をほかの人の鍵で探します。見本には Word と PDF の資料（就業規則.docx・出張旅費規程.pdf）も入っています。
 
 ## 自分の会社で使う
 
 1. `./brain up` で立てます
 2. `config/company.example.json` を `config/company.json` に写し、部門とメンバーを書きます（項目の説明は [権限のひな形](kit/kengen-4dan/README.md)）
-3. `docs/` の下に置き場ごとのフォルダを作り、Markdown のファイルを入れます
+3. `docs/` の下に置き場ごとのフォルダを作り、資料を入れます。Markdown のほか、Word・PDF・Excel・PowerPoint・テキストをそのまま置けます（[今ある資料を入れる](guide/shiryo.md)）
 
    ```
    docs/zensha/   全社の資料（keiei/ は役員だけ、shagai/ は社外にも出す）
@@ -92,6 +94,8 @@ cd japan-company-brain
    claude mcp add company-brain -t http http://127.0.0.1:3133/mcp -H "Authorization: Bearer <鍵>"
    ```
 
+社内の略語（営推＝営業推進部）は `config/yure.json` に、AI が記録を書く時の決まりは `config/kakikata.md` に書けます（[日本語検索の直し](kit/nihongo-kensaku/README.md)・[書き方の決まり](kit/kakikata/README.md)）。
+
 会社のみんなで使う時の置き方は [サーバーに置く](guide/server.md)、バックアップ・記録・人の出入りは [毎日の運用](guide/operations.md) にあります。コマンドの一覧は `./brain` で出ます。
 
 ## しくみ
@@ -99,18 +103,22 @@ cd japan-company-brain
 ```
 各自の AI ──→ 日本語検索の中継 ──→ エンジン（gbrain）──→ Postgres
                 質問文を語に分ける    鍵を確かめ、読める範囲で返す
+                書き方の決まりを配る       ↑
+Word・PDF・Excel・PowerPoint ──→ Markdown の写しにして取り込む
 ```
 
-エンジンは [gbrain](https://github.com/garrytan/gbrain)（MIT License）です。コードは変えず、バージョンを指定して取り込みます。この一式は、日本の会社で使う時に要る4つを周りに足しています。
+エンジンは [gbrain](https://github.com/garrytan/gbrain)（MIT License）です。コードは変えず、バージョンを指定して取り込みます。この一式は、日本の会社で使う時に要る物を周りに足しています。
 
 | | gbrain をそのまま | この一式 |
 |---|---|---|
 | 日本語の質問文で探す | 文のままでは当たらない | 文のまま当たる |
-| 全角と半角・異体字・(株)・和暦のちがい | 書き方がちがうと当たらない | そろえて当たる |
+| 全角と半角・異体字・(株)・和暦・社内の略語のちがい | 書き方がちがうと当たらない | そろえて当たる |
+| Word・PDF・Excel・PowerPoint | 取り込まない（Markdown だけ） | サーバーの中で Markdown に変えて取り込む |
+| 記録の書き方（だれが・いつ・正式な名前） | 案内は英語で、書き方の項目は無い | 日本語の決まりを全員の AI に配る |
 | AI が書き足したページ | 書いた本人にしか返らない | 同じ部門と役員に返る |
-| 権限を入れる | コマンドを順に実行する | 1つのファイルから入れ、表で見る |
+| 権限を入れる | コマンドを順に実行する | 1つのファイルから入れ、表で見る（兼務も書ける） |
 
-細かい説明は [日本語検索の直し](kit/nihongo-kensaku/README.md)・[権限のひな形](kit/kengen-4dan/README.md)・[確かめた範囲と、まだの所](guide/tested.md) にあります。
+細かい説明は [今ある資料を入れる](guide/shiryo.md)・[日本語検索の直し](kit/nihongo-kensaku/README.md)・[書き方の決まり](kit/kakikata/README.md)・[権限のひな形](kit/kengen-4dan/README.md)・[確かめた範囲と、まだの所](guide/tested.md) にあります。
 
 ## コントリビュート
 

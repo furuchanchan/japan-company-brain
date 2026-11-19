@@ -53,10 +53,11 @@ async function call(id: string, tool: string, a: any): Promise<{ ok: boolean; j:
 }
 
 // ---- 決めた形から「読めるはず」を出す
-const inGroup = (m: any, g: string) => g === "yakuin" ? m.dan === "yakuin" : g === "zensha" ? m.dan !== "shagai" : g === "shagai" ? m.dan === "shagai" : m.dan === "bumon" && m.department === g;
+const bumon = (m: any): string[] => m.dan === "bumon" ? [m.department, ...(m.kenmu ?? [])] : []; // 主の部門と、兼務の部門
+const inGroup = (m: any, g: string) => g === "yakuin" ? m.dan === "yakuin" : g === "zensha" ? m.dan !== "shagai" : g === "shagai" ? m.dan === "shagai" : bumon(m).includes(g);
 const under = (slug: string, ps: string[] = []) => ps.some(p => slug.startsWith(p));
 function expected(m: any, source: string, slug: string): boolean {
-  const grant = m.dan === "yakuin" ? true : m.dan === "bumon" ? source === Z.id || source === m.department : source === Z.id;
+  const grant = m.dan === "yakuin" ? true : m.dan === "bumon" ? source === Z.id || bumon(m).includes(source) : source === Z.id;
   if (!grant) return false;
   for (const r of C.rules ?? []) if (r.source === source && slug.startsWith(r.prefix) && m.id !== C.owner && !r.readers.some((x: string) => x === m.id || (x.startsWith("group:") && inGroup(m, x.slice(6))))) return false;
   if (source === Z.id && under(slug, Z.yakuin_folders)) return m.dan === "yakuin";

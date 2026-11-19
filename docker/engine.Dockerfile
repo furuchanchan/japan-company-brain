@@ -4,6 +4,10 @@ FROM oven/bun:1.4.4
 ARG GBRAIN_TAG=v0.60.736.0
 ARG GBRAIN_COMMIT=4d1628afb4b443f808e4c48c58bf951d90e6f691
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
+# 会社に今ある資料（Word・PDF）を Markdown に変える部品（markitdown、MIT License）。手元で動き、外へは送らない。
+ARG MARKITDOWN_VERSION=0.1.7
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv && rm -rf /var/lib/apt/lists/* \
+ && python3 -m venv /opt/henkan && /opt/henkan/bin/pip install --no-cache-dir "markitdown[docx,pdf,xlsx,pptx]==${MARKITDOWN_VERSION}"
 RUN git clone --depth 1 --branch ${GBRAIN_TAG} https://github.com/garrytan/gbrain.git /opt/gbrain \
  && test "$(git -C /opt/gbrain rev-parse HEAD)" = "${GBRAIN_COMMIT}"
 WORKDIR /opt/gbrain

@@ -25,6 +25,9 @@ for (const m of members) {
   if (!ID.test(m.id ?? "")) errs.push(`メンバーの id は半角の英数字とハイフン: ${m.id}`);
   if (!["yakuin", "bumon", "shagai"].includes(m.dan)) errs.push(`${m.id}: dan は yakuin・bumon・shagai のどれか`);
   if (m.dan === "bumon" && !depts.some(d => d.id === m.department)) errs.push(`${m.id}: department「${m.department}」が departments に無い`);
+  // 兼務：主の部門（department）のほかに読める部門。書く先は主の部門のまま
+  if (m.kenmu !== undefined && (m.dan !== "bumon" || !Array.isArray(m.kenmu))) errs.push(`${m.id}: kenmu（兼務）は、dan が bumon のメンバーに、部門の id の並びで書く`);
+  for (const k of Array.isArray(m.kenmu) ? m.kenmu : []) if (k === m.department || !depts.some(d => d.id === k)) errs.push(`${m.id}: kenmu「${k}」は、departments にある、主の部門とは別の部門から選ぶ`);
 }
 for (const d of [Z, ...depts]) if (!ID.test(d.id ?? "")) errs.push(`置き場の id は半角の英数字とハイフン: ${d.id}`);
 if (new Set(members.map(m => m.id)).size !== members.length) errs.push("メンバーの id が重なっている");
@@ -55,7 +58,8 @@ const curRules = (s: string): any[] => readJson(["access", "rule", "list", "--so
 // ---- 段ごとのグループ
 const ids = (dan: string) => members.filter(m => m.dan === dan).map(m => m.id);
 const groups: Record<string, string[]> = { yakuin: ids("yakuin"), zensha: [...ids("yakuin"), ...ids("bumon")], shagai: ids("shagai") };
-for (const d of depts) groups[d.id] = members.filter(m => m.dan === "bumon" && m.department === d.id).map(m => m.id);
+const bumon = (m: any): string[] => m.dan === "bumon" ? [m.department, ...(m.kenmu ?? [])] : [];
+for (const d of depts) groups[d.id] = members.filter(m => bumon(m).includes(d.id)).map(m => m.id);
 
 type Step = { what: string; cmd: string[]; saveTo?: string; bind?: string };
 const steps: Step[] = [];
@@ -107,7 +111,7 @@ for (const m of members) {
   const f = `${keysDir}/${m.id}.txt`;
   if (existsSync(f)) { skipped.push(`鍵 ${m.id}`); continue; }
   const write = m.dan === "bumon" ? m.department : Z.id;
-  const read = m.dan === "yakuin" ? [Z.id, ...depts.map(d => d.id)] : m.dan === "bumon" ? [m.department, Z.id] : [Z.id];
+  const read = m.dan === "yakuin" ? [Z.id, ...depts.map(d => d.id)] : m.dan === "bumon" ? [...bumon(m), Z.id] : [Z.id];
   const scopes = m.dan === "shagai" ? "read" : "read write";
   steps.push({ what: `鍵：${m.name}（書く先 ${m.dan === "shagai" ? "なし" : write}、読む範囲 ${read.join("・")}）`, saveTo: f,
     cmd: ["auth", "register-client", m.id, "--grant-types", "client_credentials", "--scopes", scopes, "--source", write, "--federated-read", read.join(","), "--member", m.id] });

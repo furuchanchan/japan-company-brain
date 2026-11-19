@@ -5,3 +5,4 @@
 .sync.log
 yomeru-hani.html
 /backup/
+__pycache__/
