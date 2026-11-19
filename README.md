@@ -18,7 +18,7 @@ Claude Code などの AI が、仕事の中で決まったことを書き足し�
 要る物は Docker だけです。
 
 ```bash
-git clone <このリポジトリ>
+git clone https://github.com/techworker-jp/japan-company-brain.git
 cd japan-company-brain
 ./brain up      # 立てる。初回は組み立てに数分かかります
 ./brain demo    # 見本の会社（6人・文書9件）を入れて確かめる
