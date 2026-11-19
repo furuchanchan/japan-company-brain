@@ -31,7 +31,13 @@ case "${1:-}" in
   apply)  company; shift; E bun /opt/kioku/kit/kengen-4dan/apply.ts $CJ --keys $KEYS "$@" ;;
   sync)   E gbrain sync --all --no-embed > .sync.log 2>&1 || { cat .sync.log; exit 1; }
           grep -E "^--- Syncing|pages imported|added, ~|held|error" .sync.log || true; rm -f .sync.log ;;
-  check)  company; E bun /opt/kioku/kit/kengen-4dan/check.ts $CJ --keys $KEYS --url http://127.0.0.1:3133 --write-test ;;
+  check)  company
+          if [ "${2:-}" = "--html" ]; then
+            rc=0; E bun /opt/kioku/kit/kengen-4dan/check.ts $CJ --keys $KEYS --url http://127.0.0.1:3133 --write-test --html /tmp/yomeru-hani.html || rc=$?
+            E cat /tmp/yomeru-hani.html > yomeru-hani.html
+            echo "表を yomeru-hani.html に書き出しました。ブラウザで開けます。"; exit $rc
+          fi
+          E bun /opt/kioku/kit/kengen-4dan/check.ts $CJ --keys $KEYS --url http://127.0.0.1:3133 --write-test ;;
   search) [ $# -ge 3 ] || { echo "使い方: ./kioku search <メンバーの id> \"<質問>\""; exit 2; }
           shift; E bun /opt/kioku/tools/search.ts "$@" ;;
   connect) company; [ $# -ge 2 ] || { echo "使い方: ./kioku connect <メンバーの id>"; exit 2; }
@@ -56,6 +62,7 @@ case "${1:-}" in
   ./kioku apply           会社の形（config/company.json）を入れる下見。--yes を付けると入れる
   ./kioku sync            docs/ の文書を取り込む
   ./kioku check           1人ずつの鍵で実際に呼び、読める・読めないが決めた形どおりかを表にする
+  ./kioku check --html    同じ表を、理由つきの1枚の HTML（yomeru-hani.html）に書き出す
   ./kioku search <id> "<質問>"   その人の鍵で検索する
   ./kioku connect <id>    その人の AI（Claude Code など）をつなぐ鍵を作る
   ./kioku gbrain <...>    エンジンのコマンドをそのまま呼ぶ（例: ./kioku gbrain access member disable sato）
