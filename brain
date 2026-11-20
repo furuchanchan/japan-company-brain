@@ -32,7 +32,10 @@ case "${1:-}" in
     E bun /opt/brain/kit/nihongo-kensaku/yure.ts --sql | $DC exec -T db psql -U brain -d brain -v ON_ERROR_STOP=1 -q 2>/dev/null
     echo "立ち上がりました。AI のつなぎ先: ${BRAIN_PUBLIC_URL:-http://127.0.0.1:${BRAIN_PORT:-3133}}/mcp"
     ;;
-  apply)  company; shift; E bun /opt/brain/kit/kengen-4dan/apply.ts $CJ --keys $KEYS "$@" ;;
+  apply)  company; shift
+          # 置き場のフォルダが無ければ作る（1人で始める時は docs/ が空なので）
+          E bun -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('$CJ','utf8'));for(const p of [c.zensha.path,...(c.departments||[]).map(d=>d.path)])fs.mkdirSync(p,{recursive:true})"
+          E bun /opt/brain/kit/kengen-4dan/apply.ts $CJ --keys $KEYS "$@" ;;
   sync)   # 先に、Word・PDF・Excel・PowerPoint・テキストを Markdown の写しにする（エンジンが取り込むのは Markdown だけ）
           E /opt/henkan/bin/python /opt/brain/tools/henkan.py /srv/brain/docs
           # 元のファイルが無くなったページを、検索から外す（エンジンは、消えたファイルのページを残すため）
