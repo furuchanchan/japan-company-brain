@@ -122,7 +122,7 @@ Word・PDF・Excel・PowerPoint ──→ Markdown の写しにして取り込�
 
 ## コントリビュート
 
-使ってみて困った所や足りない所を [Issue](https://github.com/furuchanchan/japan-company-brain/issues/new/choose) に書いてもらえるのが、いちばん助かります。直しを送る時は [CONTRIBUTING.md](CONTRIBUTING.md) を見てください。
+使ってみて困った所や足りない所を [Issue](https://github.com/furuchanchan/japan-company-brain/issues/new/choose) に書いてもらえるのが、いちばん助かります。直しを送る時は [CONTRIBUTING.md](CONTRIBUTING.md) を見てください。OSS を作るのはこれが初めてなので、OSS に詳しい方からの PR や、作法への指摘も歓迎です。
 
 ## セキュリティ
 
