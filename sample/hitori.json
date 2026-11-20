@@ -1,0 +1,8 @@
+{
+  "owner": "watashi",
+  "kakikomi": "sonomama",
+  "zensha": {"id": "zensha", "name": "自分", "path": "/srv/brain/docs/zensha", "yakuin_folders": [], "shagai_folders": [], "plain_directory": true},
+  "departments": [],
+  "members": [{"id": "watashi", "name": "自分", "dan": "yakuin"}],
+  "rules": []
+}
