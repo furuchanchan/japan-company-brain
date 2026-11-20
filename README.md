@@ -130,7 +130,7 @@ Word・PDF・Excel・PowerPoint ──→ Markdown の写しにして取り込�
 
 ## 作っている人
 
-[Kotaro Furuno](https://github.com/furuchanchan)（株式会社TechWorker 代表）が作っています。自社でも gbrain を毎日使っています。
+[Kotaro Furuno](https://github.com/furuchanchan) が個人で作っています。自分でも gbrain を毎日使っています。
 
 gbrain の作者・運営元とは関係のない第三者が作っています。
 
