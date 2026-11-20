@@ -1,36 +1,53 @@
 # Japan Company Brain
 
-**どの AI と話しても、これまでの文脈が1か所に溜まります。AI を替えても引ける、自分の記憶です。**
+**AI に、同じ説明を二度しなくていい。**
+
+昨日の会話で決めたことを、今日の会話の AI が覚えています。記憶を AI の外（自分のマシン）に置くので、AI を替えても同じ記憶を引けます。
+
+![左は今の状態で、月曜の会話で決めたことを水曜の会話の AI は知らない。右はこれを入れた状態で、月曜に AI が書いた記録を、水曜の会話の AI が引いて答える](assets/hero.png)
+
+- 会話で決まったことを AI に「残して」と頼むと、AI が自分の記憶に書きます
+- 次の会話では、日本語の質問のまま探して答えます
+- データは自分のマシンから出ません。1人で始めて、チームや会社にも広げられます
+
+いま動くことを確かめてある AI は Claude Code です。ChatGPT・Gemini などは、これから順に確かめます（[つなげる AI](#つなげる-ai)）。
+
+[1人で始める](#1人で始める) · [つなげる AI](#つなげる-ai) · [チームや会社で使う](#チームや会社で使う) · [サーバーに置く](guide/server.md) · [Issues](https://github.com/furuchanchan/japan-company-brain/issues)
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Engine: gbrain](https://img.shields.io/badge/engine-gbrain-blue?style=flat-square)](https://github.com/garrytan/gbrain)
 [![selftest](https://img.shields.io/github/actions/workflow/status/furuchanchan/japan-company-brain/selftest.yml?style=flat-square&label=selftest)](https://github.com/furuchanchan/japan-company-brain/actions/workflows/selftest.yml)
 
-[5分で試す](#5分で試す) · [1人で使う](#1人で使う) · [チームや会社で使う](#チームや会社で使う) · [読める範囲](#読める範囲) · [サーバーに置く](guide/server.md) · [Issues](https://github.com/furuchanchan/japan-company-brain/issues)
+## 1人で始める
 
-AI を使い込むほど、文脈は会話ごと・AI ごとに散らばります。昨日の会話で決めたことを、今日の会話の AI は知りません。新しい会話を始めるたびに、同じ説明をもう1度します。
+要る物は Docker だけです。5分ほどで動きます。
 
-Japan Company Brain は、AI との会話で決まったこと・分かったことを AI が書き足し、次の会話の AI が日本語の質問で探せる置き場です。MCP という共通のつなぎ方を使うので、置き場は AI の外にあり、AI を替えても同じ記憶を引けます。データは自分のマシンから出ません。
+```bash
+git clone https://github.com/furuchanchan/japan-company-brain.git
+cd japan-company-brain
+```
 
-> **月曜、自分の AI に**
-> 青空建設の11月の見積は値引き8パーセントで、専務が承認した。残しておいて。
->
-> **水曜、新しい会話で**
-> 青空建設の値引きは何パーセントに決まりましたか。
->
-> **AI** は、月曜の記録を見つけて答えます。
+メンバーを自分1人にした形が `sample/hitori.json` にあります。
 
-まず1人で使えます。同じ置き場をチームやプロジェクトのメンバーでつなぐと、ほかの人の AI が決めたことも引けます。会社で使う時は、部門ごとに読める範囲を分けられます。
+```bash
+./brain up                 # 立てる。初回は組み立てに数分かかります
+cp sample/hitori.json config/company.json
+./brain apply --yes        # 置き場と自分の鍵を作る
+./brain connect watashi    # AI をつなぐコマンドが表示されます
+```
 
-| | |
-|---|---|
-| **1人で** | 自分の AI との会話で決まったことが1か所に溜まり、次の会話の AI が探せます |
-| **チーム・プロジェクトで** | メンバーそれぞれの AI が同じ置き場に書き、たがいの決定を探せます |
-| **会社で** | 役員・部門・全社・社外で読める範囲を分け、記録とバックアップを取れます |
+つないだら、AI に「残しておいて」と頼むと書き、次の会話で質問すると探します。コマンドからも試せます。
+
+```bash
+./brain write watashi kimeta-1 "青空建設の値引き" "11月の見積は値引き8パーセントで、専務が承認した。"
+./brain search watashi "青空建設の値引きは何パーセントに決まりましたか"
+```
+
+いま溜まるのは、AI に残すよう頼んだ事と、書き方の決まりに沿って AI が書いた事です。会話を丸ごと自動で取り込む所は、まだ作っていません。
 
 ## つなげる AI
 
-つなぎ方は MCP（HTTP と鍵）です。確かめた物と、まだの物を分けて書きます。
+つなぎ方は MCP（AI と外の道具をつなぐ共通の規格）です。確かめた物と、まだの物を分けて書きます。
 
 | AI | 状態 |
 |---|---|
@@ -49,11 +66,27 @@ Japan Company Brain は、AI との会話で決まったこと・分かったこ
 | **今ある資料を入れる** | Word・PDF・Excel・PowerPoint・テキスト（Shift_JIS も）を、フォルダに置くだけで取り込みます |
 | **書き方の決まりを配る** | だれが・いつ・正式な名前で書く決まりを、1か所からつないだ AI に届けます |
 | **自分のマシンで動く** | 資料・DB・鍵は立てたマシンに残ります。外のサービスへは何も送りません |
+
+## チームや会社で使う
+
+同じ置き場にメンバーそれぞれの AI をつなぐと、ほかの人の AI が決めたことも探せます。会社で使う時は、人ごとに読める範囲を分けられます。
+
+| | |
+|---|---|
 | **人ごとに読める範囲が変わる** | 役員・部門・全社・社外の4段を、会社の形を書いた1つのファイルから入れます |
 | **入れた権限を表で見る** | 1人ずつの鍵で実際に呼び、だれに何が返るかを1枚の表にします |
 | **記録とバックアップ** | だれの鍵がいつ何をしたかを CSV に出せます。1つのファイルから復元できます |
 
-## 読める範囲
+### 見本の会社で試す
+
+```bash
+./brain up
+./brain demo    # 見本の会社（6人・文書12件）を入れて動かす
+```
+
+`./brain demo` は、同じ質問を3人の鍵で投げ、営業の人の AI が書き足した決定を、営業と役員の鍵では探せて、人事の鍵では探せないことを見せます。見本には Word と PDF の資料（就業規則.docx・出張旅費規程.pdf）も入っています。
+
+### 読める範囲
 
 AI は、つないだ人の鍵で読める物だけを返します。読めない資料は「無い」と同じ答えになります。
 
@@ -63,44 +96,11 @@ AI は、つないだ人の鍵で読める物だけを返します。読めな�
 | 部門 | 自分の部門と全社。ほかの部門と役員だけのフォルダは読めない | 自分の部門 |
 | 社外 | 全社のうち、名指ししたフォルダだけ | 書けない |
 
-入れた結果は `./brain check --html` で1枚の表になります。情報システムや上長に見せる時に使えます。
+入れた結果は、次のような1枚の表で確かめられます（`./brain check --html`）。行が資料、列が人で、●はその人の AI に返る資料です。
 
 ![読める範囲の表。資料ごとに、役員・営業・人事・社外のだれが読めるかを●で示す](assets/yomeru-hani.png)
 
-## 5分で試す
-
-要る物は Docker だけです。
-
-```bash
-git clone https://github.com/furuchanchan/japan-company-brain.git
-cd japan-company-brain
-./brain up      # 立てる。初回は組み立てに数分かかります
-./brain demo    # 見本の会社（6人・文書12件）を入れて動かす
-```
-
-`./brain demo` は、見本の会社で権限の表を出し、同じ質問を3人の鍵で投げ、営業の人の AI が書き足した決定をほかの人の鍵で探します。見本には Word と PDF の資料（就業規則.docx・出張旅費規程.pdf）も入っています。
-
-## 1人で使う
-
-メンバーを自分1人にした形が `sample/hitori.json` にあります。
-
-```bash
-./brain up
-cp sample/hitori.json config/company.json
-./brain apply --yes        # 置き場と自分の鍵を作る
-./brain connect watashi    # AI をつなぐコマンドが表示されます
-```
-
-つないだら、AI に「残しておいて」と頼むと書き、次の会話で質問すると探します。コマンドからも試せます。
-
-```bash
-./brain write watashi kimeta-1 "青空建設の値引き" "11月の見積は値引き8パーセントで、専務が承認した。"
-./brain search watashi "青空建設の値引きは何パーセントに決まりましたか"
-```
-
-いま溜まるのは、AI に残すよう頼んだ事と、書き方の決まりに沿って AI が書いた事です。会話を丸ごと自動で取り込む所は、まだ作っていません。
-
-## チームや会社で使う
+### 自分の会社の形を入れる
 
 1. `./brain up` で立てます
 2. `config/company.example.json` を `config/company.json` に写し、部門とメンバーを書きます（項目の説明は [権限のひな形](kit/kengen-4dan/README.md)）
