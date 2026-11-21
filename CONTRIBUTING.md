@@ -27,6 +27,6 @@ sh tools/selftest.sh
 
 ## 決めていること
 
-- エンジン（gbrain）のコードは変えません。エンジンの側の問題は [gbrain のリポジトリ](https://github.com/garrytan/gbrain) へ送ってください
+- エンジンのコードは `engine/` にあります（gbrain の fork）。日本語で詰まる所は、ここを直す PR を歓迎します。本家でも同じ問題が起きる直しは、[gbrain のリポジトリ](https://github.com/garrytan/gbrain) にも出してください（[手順](guide/engine.md)）。
 - 外のサービスへ資料を送る機能は入れません
 - 送ってもらったコードは、このリポジトリと同じ MIT License で公開します

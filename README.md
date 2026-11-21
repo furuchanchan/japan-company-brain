@@ -143,7 +143,7 @@ AI は、つないだ人の鍵で読める物だけを返します。読めな�
 Word・PDF・Excel・PowerPoint ──→ Markdown の写しにして取り込む
 ```
 
-エンジンは [gbrain](https://github.com/garrytan/gbrain)（MIT License）です。コードは変えず、バージョンを指定して取り込みます。この一式は、日本の会社で使う時に要る物を周りに足しています。
+エンジンは、[gbrain](https://github.com/garrytan/gbrain)（MIT License）を fork した物で、コードは [`engine/`](engine) に入っています。起点は v0.60.736.0 です。いまの `engine/` の中身は本家のこの版と同じで、日本語で詰まる所はこれから中で直していきます（[エンジンの直し方と、本家の取り込み方](guide/engine.md)）。日本の会社で使う時に要る物は、周りにも足しています。
 
 | | gbrain をそのまま | この一式 |
 |---|---|---|

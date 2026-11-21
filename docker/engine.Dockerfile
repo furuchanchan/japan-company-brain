@@ -1,15 +1,12 @@
-# エンジンは gbrain（MIT License、Copyright (c) 2026 Garry Tan）。コードは変えず、確かめた版をそのまま取り込む。
-# 版を上げる時は、下の2つを替えてから ./brain demo の確かめを通す。
+# エンジンは engine/ に入っている。gbrain（MIT License、Copyright (c) 2026 Garry Tan）の v0.60.736.0 を fork した物。
+# 本家の新しい版を取り込む時は guide/engine.md の手順で engine/ を更新し、./brain demo の確かめを通す。
 FROM oven/bun:1.4.4
-ARG GBRAIN_TAG=v0.60.736.0
-ARG GBRAIN_COMMIT=4d1628afb4b443f808e4c48c58bf951d90e6f691
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
 # 会社に今ある資料（Word・PDF）を Markdown に変える部品（markitdown、MIT License）。手元で動き、外へは送らない。
 ARG MARKITDOWN_VERSION=0.1.7
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv && rm -rf /var/lib/apt/lists/* \
  && python3 -m venv /opt/henkan && /opt/henkan/bin/pip install --no-cache-dir "markitdown[docx,pdf,xlsx,pptx]==${MARKITDOWN_VERSION}"
-RUN git clone --depth 1 --branch ${GBRAIN_TAG} https://github.com/garrytan/gbrain.git /opt/gbrain \
- && test "$(git -C /opt/gbrain rev-parse HEAD)" = "${GBRAIN_COMMIT}"
+COPY engine /opt/gbrain
 WORKDIR /opt/gbrain
 ENV GBRAIN_NO_AUTOPILOT_INSTALL=1 GBRAIN_HOME=/data/home
 RUN bun install --frozen-lockfile

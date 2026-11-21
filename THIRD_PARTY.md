@@ -2,12 +2,14 @@
 
 このリポジトリに入っているコード（`brain`・`kit/`・`tools/`・`docker/`・`sample/`）は MIT License です（[LICENSE](LICENSE)）。
 
-`./brain up` を実行すると、次の部品をそれぞれの配布元から取り込んで Docker のイメージを組み立てます。
-このリポジトリには、これらの部品のコードは入っていません。部品のコードは変えていません。
+`engine/` は gbrain（MIT License、Copyright (c) 2026 Garry Tan）を fork した物です。起点は v0.60.736.0（コミット 4d1628af）で、元のライセンスと著作権の表示は [engine/LICENSE](engine/LICENSE) にそのまま残しています。この一式で変えた所には、同じ MIT License を付けます。
+
+`./brain up` を実行すると、`engine/` と、次の部品をそれぞれの配布元から取り込んで Docker のイメージを組み立てます。
+gbrain のほかの部品のコードは、このリポジトリには入っていません。変えてもいません。
 
 | 部品 | 役目 | バージョン | ライセンス | 配布元 |
 |---|---|---|---|---|
-| gbrain | エンジン（記憶・検索・権限・窓口） | v0.60.736.0（コミット 4d1628af） | MIT License。Copyright (c) 2026 Garry Tan | https://github.com/garrytan/gbrain |
+| gbrain | エンジン（記憶・検索・権限・窓口）。`engine/` に fork して入れている | 起点 v0.60.736.0（コミット 4d1628af） | MIT License。Copyright (c) 2026 Garry Tan | https://github.com/garrytan/gbrain |
 | Bun | エンジンと道具を動かす実行環境 | 1.4.4 | MIT License。静的に含む JavaScriptCore は LGPL-2 | https://github.com/oven-sh/bun |
 | PostgreSQL | DB | 17 | PostgreSQL License | https://www.postgresql.org/ |
 | pgvector | 意味の検索の部品 | イメージ `pgvector/pgvector:pg17` に入っているバージョン | PostgreSQL License | https://github.com/pgvector/pgvector |
